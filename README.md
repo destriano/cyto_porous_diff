@@ -19,7 +19,7 @@ Code description
 - eee
 - eee
 
-  
+  The codes XX, YY, and ZZ were run on WSL2 (Ubuntu 20.04 LTS GNU/Linux 6.6.87.2-microsoft-standard-WSL2 x86_64) on a conda environment containing not exhaustively gmsh 4.9.5, fenics 2019.1.0 and meshio 5.3.4.
 
 
-
+All computations were run on a Dell laptop XPS15 9560 with Intel core i7 7th gen and 16Go RAM.
