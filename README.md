@@ -9,6 +9,7 @@ https://drive.google.com/drive/folders/1_dm-Qdy5PZaqRbkB8h7PlyJ6r3B3WpCI?usp=sha
 
 Full experimental data (>1To) can be provided upon reasonable request
 
+
 Code description
 - FRAP_extraction_and_analysis_2025_10_21: to process raw confocal microscopy (Zeiss .czi format) timelapse images to infer GFP diffusivity. (test data provided in FRAP folder of the gdrive)
 - FCS_extraction_and_analysis_2025_10_21: to process autocorrelation curves obtained from raw FCS data by another software (we used Symphotime64), to infer GFP inverse residence time in effective FCS volume. (test data provided in FCS folder of the gdrive)
@@ -18,7 +19,6 @@ Code description
 - P25_all_fenics_computations_2D_3D_T_H_2025_10_29: allows to resolve numerically using finite elements method the closure problems for tortuosity and permeability. Require the functions present in P25_all_fenics_functions_2D_3D_T_H
 
 
-  The code "P25_all_fenics_computations_2D_3D_T_H_2025_10_29" was run on WSL2 (Ubuntu 20.04 LTS GNU/Linux 6.6.87.2-microsoft-standard-WSL2 x86_64) on a conda environment containing not exhaustively gmsh 4.9.5, fenics 2019.1.0 and meshio 5.3.4.
-
+The code "P25_all_fenics_computations_2D_3D_T_H_2025_10_29" was run on WSL2 (Ubuntu 20.04 LTS GNU/Linux 6.6.87.2-microsoft-standard-WSL2 x86_64) on a conda environment containing not exhaustively gmsh 4.9.5, fenics 2019.1.0 and meshio 5.3.4.
 
 All computations were run on a Dell laptop XPS15 9560 with Intel core i7 7th gen and 16Go RAM.
