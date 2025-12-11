@@ -67,7 +67,7 @@ A=1/9 #quadratic coefficient for porous hydrodynamic  hindrance
 
 #%%
 "========================================================================================="
-"=========================BASIC FUNCTION FOR PLOTTING POROUS HINDRANCE for 2D-CD and 3D-CFC ========================="
+"=========================BASIC FUNCTION FOR PLOTTING POROUS HINDRANCES for 2D-CD and 3D-CFC ========================="
 "========================================================================================="
 
 subpath_effects='porous_hindrances_updated_2024_03_28/'
@@ -173,38 +173,38 @@ for i_vf in range(len(L_vf)):
     
     vol_fraction=L_vf[i_vf]
     for i_R_partic in range(len(L_R_partic)):
-        R_partic=L_R_partic[i_R_partic]#rayon particule diffusive
+        R_partic=L_R_partic[i_R_partic]#diffusive particle radius
         for i_R_solid in range(len(L_R_solid)):
             R_solid=L_R_solid[i_R_solid]#rayon de l'obstacle solide immobile
          
-            "1 - fichiers loadés : rayon réel=200nm"
-            R_gfp=2.3#2.3#NE PAS MODIFIER, rayon utilisé pour l'expression du volume exclu dans x_t_act_mesh0p01_refine1_2023_12_12 
+            "1 - loaded files: real obstacle size 200nm"
+            R_gfp=2.3#DO NOT TOUCH particle radius used for dimensionalisation in numerical computations
             if dimension==2:
                 x_t=np.load(subpath_effects+'x_t_act_mesh0p05_refine1_2024_03_28.npy')#2023_12_11
                 y_t=np.load(subpath_effects+'y_t_act_mesh0p05_refine1_2024_03_28.npy')#2023_12_11
                 x_perm=np.load(subpath_effects+'x_perm_act_mesh0p05_refine1_2024_03_28.npy')#2023_12_11
                 y_perm=np.load(subpath_effects+'y_perm_act_mesh0p05_refine1_2024_03_28.npy')#2023_12_11
-                R_results=4#NE PAS MODIFIER, rayon de la sphère utilisée pour le calcul des résultats, R=200nm
+                R_results=4#DO NOT TOUCH particle radius used for dimensionalisation in numerical computations
             elif dimension==3:
                 x_t=np.load(subpath_effects+'x_t_orga_cfc_msh0p05_refine_1s2_2024_03_28.npy')#'x_t_orga_mesh0p05_refine1_2023_12_11.npy')
                 y_t=np.load(subpath_effects+'y_t_orga_cfc_msh0p05_refine_1s2_2024_03_28.npy')#'y_t_orga_mesh0p05_refine1_2023_12_11.npy'
                 x_perm=np.load(subpath_effects+'x_perm_orga_cfc_msh0p05_refine_1s2_2024_03_28.npy')#'x_perm_orga_mesh0p05_refine1_2023_12_11.npy'
                 y_perm=np.load(subpath_effects+'y_perm_orga_cfc_msh0p05_refine_1s2_2024_03_28.npy')#'y_perm_orga_mesh0p05_refine1_2023_12_11.npy'
-                R_results=200#NE PAS MODIFIER, rayon de la sphère utilisée pour le calcul des résultats, R=200nm
-            #on ne load pas les résultats HD car ils vont être recalculés à partir de la perméabilité
+                R_results=200##DO NOT TOUCH particle radius used for dimensionalisation in numerical computations
+            #Hydrodynamic results are recomputed from permeability
             
-            "2 - Recalcul tortuosité"
-            if vol_fraction=='occupied': #corrigé le 2024 02 12
+            "2 - Recomputing tortuosity"
+            if vol_fraction=='occupied': #corrected on 2024 02 12
                 x_t_excluded_results=((R_results+R_gfp)/R_results)**dimension*x_t
-                x_t_excluded_2=x_t_excluded_results #l'effet tortueux est identique à iso-fraction exclue
+                x_t_excluded_2=x_t_excluded_results #tortuosity is identical for identical excluded fraction
                 x_t_occupied_2=x_t_excluded_2/((R_solid+R_partic)/R_solid)**dimension
                 x_t=x_t_occupied_2
             elif vol_fraction=='excluded':
                 x_t_excluded_results=((R_results+R_gfp)/R_results)**dimension*x_t
-                x_t=x_t_excluded_results #l'effet tortueux est identique à iso-fraction exclue
+                x_t=x_t_excluded_results #tortusoity is identifical for identical excluded fraction
                 
-            "3 - Recalcul HD"
-            y_perm_2=y_perm*(R_solid/R_results)**2 #re-dimensionnement perméabilité (en m2)
+            "3 - Recomputation hydrodynamic hindrance (HD)"
+            y_perm_2=y_perm*(R_solid/R_results)**2 #re-dimensionalization of permeability (in m2)
             y_perm=y_perm_2
             y_hd=[]; x_hd=[]
             for i in range(len(x_perm)):
@@ -218,7 +218,7 @@ for i_vf in range(len(L_vf)):
             if vol_fraction=='excluded':
                 x_hd_excluded_2=((R_solid+R_partic)/R_solid)**dimension*x_hd
                 x_hd=x_hd_excluded_2
-            "4 - construction courbe CB"  
+            "4 - construction of the curve for the combined hydro and tortuosity"  
             lim=min(max(x_t),max(x_hd))
             x_t_shortened=x_t[x_t<=lim]
             x_hd_shortened=x_hd[x_hd<=lim]
@@ -229,7 +229,7 @@ for i_vf in range(len(L_vf)):
             
 
                 
-            "5 - affichage"
+            "5 - print"
             L_marker=['s','o','^','x']
             plt.plot(x_t,(1-y_t),'k:',label=r'$T_\alpha^{-1}$',color=L_color[i_R_partic],marker=L_marker[2*i_R_partic],markevery=0.2)
             plt.plot(x_hd,(1-y_hd),'k--',label=r'$H_\alpha^{-1}$',color=L_color[i_R_partic],marker=L_marker[2*i_R_partic],markevery=0.08)
@@ -278,7 +278,7 @@ x_t_oc_simple_2D=x_t_ex_simple_2D*(R_act/(R_act+R_gfp))**2
 x_t_oc_simple_3D=x_t_ex_simple_3D*(R_rib/(R_rib+R_gfp))**3
 
 
-"1 - fichiers loadés : rayon réel=200nm"
+"1 - loading files (real radius 200Nm)"
 for dimension in [2,3]:
     if dimension==2:
         x_perm=np.load(subpath_effects+'x_perm_act_mesh0p05_refine1_2024_03_28.npy')
@@ -319,7 +319,7 @@ df_perm_import['Perm_adim']=df_perm_import['Perm_adim']*(R_nano/df_perm_import['
 df_perm_import=df_perm_import.rename({'Porosite':'fs_oc','R_ex':'R_oc','Perm_adim':'Perm_nm2'},axis=1)
 
 "======================== LIEN TORTUOSITE ET PERM======================"
-"TORT - Binning par rayon et N-obs"
+"TORT - Binning by radius and number of obstacles"
 array_radius_num=df_tort_import['R_ex']
 array_N_obs=df_tort_import['N_obs']
 
@@ -344,7 +344,7 @@ charray_tort_results_fibers=np.array([L_R_num_bin,L_N_obs_bin,L_fs_oc_bin,L_perm
 charray_tort_results_fibers=np.transpose(charray_tort_results_fibers)
 df_tort_results_fibers= pd.DataFrame(charray_tort_results_fibers, columns=['R_ex','N_obs','fs_ex','tort','fs_ex_std','tort_std'])
 
-"PERM - Binning par rayon et N-obs"
+"permeability - binning by radius and number of obstacles"
 array_radius_num=df_perm_import['R_oc']
 array_N_obs=df_perm_import['N_obs']
 
@@ -369,15 +369,15 @@ charray_perm_results_fibers=np.array([L_R_num_bin,L_N_obs_bin,L_fs_oc_bin,L_perm
 charray_perm_results_fibers=np.transpose(charray_perm_results_fibers)
 df_perm_results_fibers= pd.DataFrame(charray_perm_results_fibers, columns=['R_oc','N_obs','fs_oc','perm_nm2','fs_oc_std','perm_nm2_std'])
 
-"===============FUSION DES DF TORT ET PERM==============="
+"===============Fusion of dataframes for tortuosity and permeability==============="
 R_GFP=2.3
 R_act=4.0
 R_ex_oc_ratio=(R_GFP+R_act)/R_act
 
-"---création du charray_combined qui combine les résultats TORT et PERM---"
+"---charray_combined creation from TORT et PERM results---"
 N_c_tort=charray_tort_results_fibers.shape[1]
-N_c_perm=charray_perm_results_fibers.shape[1]-1 #-1 pour ne pas mettre deux fois le nombre d'obstacles
-charray_combined_results_fiber=np.zeros((0,N_c_tort+N_c_perm),dtype=np.float64) #définition du charray combined
+N_c_perm=charray_perm_results_fibers.shape[1]-1 #-1 to avoid putting twice the number of obstacles
+charray_combined_results_fiber=np.zeros((0,N_c_tort+N_c_perm),dtype=np.float64) # charray combined definition
 
 array_radius_num=df_perm_results_fibers['R_oc']
 for i_R_oc in range (array_radius_num.size):
@@ -443,8 +443,8 @@ R_num_oc=0.06
 df_perm_import['Perm_adim']=df_perm_import['Perm_adim']*(R_nano/R_num_oc)**2
 df_perm_import=df_perm_import.rename({'Porosite':'fs_oc','R_ex':'R_oc','Perm_adim':'Perm_nm2'},axis=1)
 
-"======================== 3D MIXED - LIEN TORTUOSITE ET PERM======================"
-"TORT - Binning par rayon et N-obs"
+"======================== 3D random MIXED - TORTUOSITY and PERM======================"
+"TORT - Binning by radius and number of obstacles"
 array_radius_num=df_tort_import['[R_act,R_rib]']
 array_N_obs=df_tort_import['[N_act,N_rib]']
 
@@ -470,7 +470,7 @@ charray_tort_results_mixed=np.array([L_R_act_num_bin,L_R_rib_num_bin,L_N_obs_bin
 charray_tort_results_mixed=np.transpose(charray_tort_results_mixed)
 df_tort_results_mixed= pd.DataFrame(charray_tort_results_mixed, columns=['R_act_ex','R_rib_ex','N_obs','fs_ex','tort','fs_ex_std','tort_std'])
 
-"PERM - Binning par rayon et N-obs"
+"PERM - Binning by radius and number of obstacles "
 array_radius_num=df_perm_import['[R_act,R_rib]']
 array_N_obs=df_perm_import['[N_act,N_rib]']
 
@@ -495,11 +495,11 @@ charray_perm_results_mixed=np.array([L_R_act_num_bin,L_R_rib_num_bin,L_N_obs_bin
 charray_perm_results_mixed=np.transpose(charray_perm_results_mixed)
 df_perm_results_mixed= pd.DataFrame(charray_perm_results_mixed, columns=['R_act_oc','R_rib_oc','N_obs','fs_oc','perm_nm2','fs_oc_std','perm_nm2_std'])
        
-"===============3D MIXED - FUSION DES DF TORT ET PERM==============="
-"---création du charray_combined qui combine les résultats TORT et PERM---"
+"===============3D MIXED - FUSION of dataframes for TORT ET PERM==============="
+"---harray_combined creation from TORT and PERM results---"
 N_c_tort=charray_tort_results_mixed.shape[1]
-N_c_perm=charray_perm_results_mixed.shape[1]-1 #-1 pour ne pas mettre deux fois le nombre d'obstacles
-charray_combined_results_mixed=np.zeros((0,N_c_tort+N_c_perm),dtype=np.float64) #définition du charray combined
+N_c_perm=charray_perm_results_mixed.shape[1]-1 #-1 to avoid putting twice the number of obstacles
+charray_combined_results_mixed=np.zeros((0,N_c_tort+N_c_perm),dtype=np.float64) #définition charray combined
 
 array_N_obs=df_perm_results_mixed['N_obs']
 for i_N_obs in range (array_N_obs.size):
@@ -577,7 +577,7 @@ plt.show()
 
 
 
-"AFFICHAGE LEGENDE"
+"SEPARATE LEGEND PRINT"
 figsize=[5/2.54,5/2.54]#[3/2.54,5/2.54]
 fig,ax=plt.subplots(figsize=figsize,dpi=800)
 ax.errorbar([1],[1],yerr=[1],xerr=[1],label='3D-random F-actin',color=L_color[2],capsize=3,linewidth=1,marker='<',ms=3,zorder=1,markeredgewidth=0.6, markeredgecolor=[0.3,0.3,0.3])
@@ -642,7 +642,7 @@ plt.show()
 #,capsize=3,linewidth=1,marker='<',ms=5,zorder=1),capsize=3,linewidth=1,marker='s',ms=4,zorder=0),linewidth=1,marker='o',markevery=10,ms=5),linewidth=1,marker='^',markevery=3,ms=5)
 
 
-"PERMEABILITY - OC "
+"PERMEABILITY - occupied fraction "
 # figsize=[5/2.54,5/2.54]#[3/2.54,5/2.54]
 # fig,ax=plt.subplots(figsize=figsize,dpi=800)
 # L_sort=np.argsort(df_combined_results_fibers['fs_oc'])
@@ -668,7 +668,7 @@ plt.show()
 # plt.show()
 
 
-"PERMEABILITY - EX "
+"PERMEABILITY - excluded fraction"
 # figsize=[5/2.54,5/2.54]#[3/2.54,5/2.54]
 # fig,ax=plt.subplots(figsize=figsize,dpi=800)
 # L_sort=np.argsort(df_combined_results_fibers['fs_oc'])
@@ -694,7 +694,7 @@ plt.show()
 # plt.savefig(title+".svg")
 # plt.show()
 
-"POROUS HYDRODYNAMIC HINDRANCE - OCCUPIED VOLUME "
+"POROUS HYDRODYNAMIC HINDRANCE - OCCUPIED fraction "
 # figsize=[5/2.54,5/2.54]#[3/2.54,5/2.54]
 # fig,ax=plt.subplots(figsize=figsize,dpi=800)
 # A=1/9
@@ -749,7 +749,7 @@ plt.show()
 # plt.savefig(title+".svg")
 # plt.show()
 
-"POROUS HYDRODYNAMIC HINDRANCE - EXCLUDED VOLUME "
+"POROUS HYDRODYNAMIC HINDRANCE - EXCLUDED fraction "
 figsize=[5/2.54,5/2.54]#[3/2.54,5/2.54]
 fig,ax=plt.subplots(figsize=figsize,dpi=800)
 A=1/9
@@ -809,7 +809,7 @@ plt.ylabel(r'Nano-obs Porous. Hydro. Hind. ',font=font)
 plt.show()
 
 
-"NANO-obstacle HINDRANCE - OCCUPIED VOLUME"
+"NANO-obstacle HINDRANCE - OCCUPIED fraction"
 # figsize=[5/2.54,5/2.54]#[3/2.54,5/2.54]
 # fig,ax=plt.subplots(figsize=figsize,dpi=800)
 
@@ -871,7 +871,7 @@ plt.show()
 
 
 
-"NANO-obstacle HINDRANCE - EXCLUDED VOLUME"
+"NANO-obstacle HINDRANCE - EXCLUDED fraction"
 #,capsize=3,linewidth=1,marker='<',ms=5,zorder=1),capsize=3,linewidth=1,marker='s',ms=4,zorder=0),linewidth=1,marker='o',markevery=10,ms=5),linewidth=1,marker='^',markevery=3,ms=5)
 figsize=[5/2.54,5/2.54]#[3/2.54,5/2.54]
 fig,ax=plt.subplots(figsize=figsize,dpi=800)
