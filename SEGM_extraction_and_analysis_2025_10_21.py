@@ -634,7 +634,7 @@ def P25_ZSTACK_SEGM(path_segm,name,charray_color_correspondance,size_px_zstack,s
             L_zone.append(T_zone_correspondance[i_region])
             L_cellvol.append(V_cell)
         
-            "calcul des porosités avec la méthode binaire"
+            "porositiy and obstacle fractions computation in each cytoplasmic region using the so-called "binary corrected" segmentation method (see Supporting Appendix 1E)
             method='binary_corrected'
             fractions=P25_calcul_fractions_volumiques(r_heavy_times_heavy_region,r_region_macroobstacles_times_heavy_region,r_region_hyaloplasm_times_heavy_region,r_heavy_closingBG_times_heavy_region,method,nucleoplasm_reference)
             L_method_bin.append(method)
@@ -714,10 +714,6 @@ charray_color_correspondance=np.array([['HP'     ,'LP','whatever_region'],
                                        [(34,177,76),(63,72,204),(163,73,164)]],dtype='object')
 
 
-
-
-stop_here=np.stop_here #only run next block if pro-processing not conducted yet
-#%%
 "=========================================================================="
 "====================== PRE-PROCESSING FOR CELL VOLUME AND EXCLUDED OBSTACLE FRACTIONS \Phi_n and \Ph_m COMPUTATIONS ==============================="
 "=========================================================================="
@@ -806,7 +802,7 @@ stop_here=np.stop_here #only run next block if pro-processing HAS BEEN already c
 "=========================================================================="
 
 #PROCESSING
-plots=[plots]*3#[plots_light,plots_heavy,plots_porosity_zones]
+plots=[plots]*3# should plots be printed 0 or 1
 size_z_zstack_binned=size_z_zstack*binning_z
 parameters=[seuil_segmentation_obstacles,seuil_segmentation_background,binning_heavy,binning_light,FLUO_RATIO,size_critical_opening,size_critical_closing,Radius_closing_bg,window_size_µm,nucleoplasm_reference] 
 for i_effet in range (len(array_unique_effet)):
