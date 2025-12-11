@@ -57,23 +57,23 @@ plt.rcParams['xtick.minor.width'] = plot_borders_width
 plt.rcParams['boxplot.showbox']=False
 
 "======================================================="
-"=============definition des fonctions===================="
+"=============FUnction definition===================="
 "======================================================="
 
-def build_num(num): #sert juste à rajouter un 0 si y'en a pas
+def build_num(num): #adds a zero prior to a single digit number to match the saved file name format from Zeiss (example: '7' --> '07')
     if num<10:
         return '0'+str(int(num))
     else : 
         return str(int(num))
     
-def unique_string(array): # permet, dans un char_array (ou pas), de récupérer un charray de valeurs uniques
+def unique_string(array): # recovers uniques values in a char array
     L_2=[]
     for x in array:
         if x not in L_2 and pd.isnull(x)==0:
             L_2.append(x)
     return np.array(L_2)
         
-def remove_nans(vector,data_type): #permet de faire un charray sans les nans 
+def remove_nans(vector,data_type): #removes the nans from a char array
     L_2=[]
     for x in vector:
         if pd.isnull(x)==0:
@@ -84,7 +84,7 @@ L_color=['#377eb8', '#ff7f00', '#4daf4a',
       '#f781bf', '#a65628', '#984ea3',
       '#999999', '#e41a1c', '#dede00'] #color blind colors
 L_marker=['s','o','^','x','<','*']
-def P25_print_text_statistical_t_test(a,b,text,k):
+def P25_print_text_statistical_t_test(a,b,text,k): #prints welchs t tests 
     _,p=scipy.stats.ttest_ind(a,b,equal_var=False)   
     if p<0.0001:
         plt.text(0.1,0.9-0.05*k,text+str(p),fontsize='x-small')
@@ -137,7 +137,7 @@ def P26_boxplot_and_violinplot(array_unique_effet,array_unique_zone,df_combined_
     else : 
         hue_var_ttest='cond'
     
-    "1===Affichage boxplots==="
+    "1===Printing boxplots==="
     fig, axg = plt.subplots(figsize=figsize,dpi=800)
     plt.title(title,font=font)
     
@@ -150,11 +150,11 @@ def P26_boxplot_and_violinplot(array_unique_effet,array_unique_zone,df_combined_
     for i in range(len(array_order)): 
         group=array_order[i]
         values=df_combined_results_mod[y_var][df_combined_results_mod[x_var]==group]
-        if bars_mode=='q1q2q3': #on affiche le point median et les quartiles 1 et 3
+        if bars_mode=='q1q2q3': #prints the median as well as the first and third quartiles
             low_bar = np.percentile(values, 25)
             med_bar = np.percentile(values, 50)
             high_bar = np.percentile(values, 75)
-        elif bars_mode=='meanstd': #on affiche la moyenne et +- standard deviation --> plus cohérent avec la partie modèle
+        elif bars_mode=='meanstd': #prints the mean and mean+-standard deviation
             med_bar=np.mean(values)
             low_bar=med_bar-np.std(values)
             high_bar=med_bar+np.std(values)        
@@ -168,11 +168,11 @@ def P26_boxplot_and_violinplot(array_unique_effet,array_unique_zone,df_combined_
     plt.ylabel(ylabel,font=font)
     plt.xlabel(xlabel,font=font)   
   
-    "3===Affichage t-tests==="
+    "3===Printing t-tests==="
     plt.figure(dpi=400)
     plt.title(title)
     k=1
-    "AFFICHAGE ISO-CONDITION"
+    "PRINTING at ISO condition (same osmolarity, different cytoplasmic regions)"
     for i_cond in range(len(array_unique_effet)) :
         if len(array_unique_zone)==2:
             a=df_combined_results_mod[y_var][(df_combined_results_mod[hue_var_ttest]==array_unique_effet[i_cond])*(df_combined_results_mod['region']=='HP')]
@@ -180,8 +180,8 @@ def P26_boxplot_and_violinplot(array_unique_effet,array_unique_zone,df_combined_
             P25_print_text_statistical_t_test(a,b,array_unique_effet[i_cond]+', HP VS LP, p=',k)      
             k+=1        
         else :
-            print("Problème dans 2===Affichage t-tests=== : le nombre de régions n'est pas de 2")
-    "AFFICHAGE ISO-REGION"
+            print("Error in 3===Printing t-tests=== : number of regions is not equal to 2")
+    "PRINTING at ISO region (different osmolarities, same region)"
     k+=1 
     for i_region in range(len(array_unique_zone)):
         for i_cond in range(len(array_unique_effet)) :
@@ -189,7 +189,7 @@ def P26_boxplot_and_violinplot(array_unique_effet,array_unique_zone,df_combined_
             b=df_combined_results_mod[y_var][(df_combined_results_mod[hue_var_ttest]==array_unique_effet[i_cond-1])*(df_combined_results_mod['region']==array_unique_zone[i_region])]
             P25_print_text_statistical_t_test(a,b,array_unique_zone[i_region]+', '+array_unique_effet[i_cond]+' VS '+array_unique_effet[i_cond-1]+', p=',k)
             k+=1
-    "AFFICHAGE ISO-REGION - comparé au control"        
+    "PRINTING ISO region, compared to control condition"        
     k+=1 
     for i_region in range(len(array_unique_zone)):
         for i_cond in range(1,len(array_unique_effet)) :
@@ -214,7 +214,7 @@ def P26_boxplot_and_violinplot_ratioLPHP(array_unique_effet,array_unique_zone,df
     df_ratio=pd.DataFrame(columns=['cond','ratio'],data=m_ratio)
     df_ratio['ratio']=df_ratio['ratio'].apply(pd.to_numeric)
 
-    "1===Affichage boxplots==="
+    "1===Printing boxplots=="
     fig, axg = plt.subplots(figsize=figsize,dpi=800)
     plt.title(title,font=font)
 
@@ -227,11 +227,11 @@ def P26_boxplot_and_violinplot_ratioLPHP(array_unique_effet,array_unique_zone,df
     for i in range(len(array_order)):
         group=array_order[i]
         values=df_ratio['ratio'][df_ratio['cond']==group]     
-        if bars_mode=='q1q2q3': #on affiche le point median et les quartiles 1 et 3
+        if bars_mode=='q1q2q3': #prints the median as well as the first and third quartiles
             low_bar = np.percentile(values, 25)
             med_bar = np.percentile(values, 50)
             high_bar = np.percentile(values, 75)
-        elif bars_mode=='meanstd': #on affiche la moyenne et +- standard deviation --> plus cohérent avec la partie modèle
+        elif bars_mode=='meanstd': #prints the mean and mean+-standard deviation
             med_bar=np.mean(values)
             low_bar=med_bar-np.std(values)
             high_bar=med_bar+np.std(values)         
@@ -239,13 +239,13 @@ def P26_boxplot_and_violinplot_ratioLPHP(array_unique_effet,array_unique_zone,df
         plt.hlines(y=low_bar, xmin=i-0.2, xmax=i+0.2, color="black", linewidth=1)
         plt.hlines(y=high_bar, xmin=i-0.2, xmax=i+0.2, color="black", linewidth=1)
         plt.hlines(y=med_bar, xmin=i-0.4, xmax=i+0.4, color="black", linewidth=1.5)
-
+             
     plt.ylim(ylim)
     plt.xlim(xlim)
     plt.ylabel(ylabel,font=font)
     plt.xlabel(xlabel,font=font)   
  
-    "AFFICHAGE cond VS cond-1"
+    "PRINTING GIVEN OSMOLARITY VS CLOSEST OTHER OSMOLARITY"
     plt.figure(dpi=400)
     plt.title(title)
     k=1
@@ -254,7 +254,7 @@ def P26_boxplot_and_violinplot_ratioLPHP(array_unique_effet,array_unique_zone,df
         b=df_ratio['ratio'][(df_ratio['cond']==array_unique_effet[i_cond-1])]
         P25_print_text_statistical_t_test(a,b,array_unique_effet[i_cond]+' VS '+array_unique_effet[i_cond-1]+', p=',k)
         k+=1
-    "AFFICHAGE par rapport à ISO"
+    "PRINTING COMPARED TO ISOOSMOTIC"
     k+=1
     for i_cond in range(len(array_unique_effet)) :
         a=df_ratio['ratio'][(df_ratio['cond']==array_unique_effet[i_cond])]
@@ -289,7 +289,7 @@ def P25_boxplot_and_violinplot_diffLPHP(array_unique_effet,array_unique_zone,df_
     plt.ylim(ylim)
     
     
-    "2===Application d'un pattern pour colorblinds==="
+    "2===Pattern for colobling people==="
     # hatches must equal the number of hues (3 in this case)
     global_hatches=['','/', 'x',"\ ",'//','xx','\\']
     if hue_var_label is not None:
@@ -306,7 +306,7 @@ def P25_boxplot_and_violinplot_diffLPHP(array_unique_effet,array_unique_zone,df_
         patch.set_hatch(hatch)
         patch.set_edgecolor('darkslategray')
     
-    "AFFICHAGE cond VS cond-1"
+    "PRINTING GIVEN OSMOLARITY VS CLOSEST OTHER OSMOLARITY"
     plt.figure(dpi=400)
     plt.title(title)
     k=1
@@ -315,7 +315,7 @@ def P25_boxplot_and_violinplot_diffLPHP(array_unique_effet,array_unique_zone,df_
         b=df_ratio['ratio'][(df_ratio['cond']==array_unique_effet[i_cond-1])]
         P25_print_text_statistical_t_test(a,b,array_unique_effet[i_cond]+' VS '+array_unique_effet[i_cond-1]+', p=',k)
         k+=1
-    "AFFICHAGE par rapport à ISO"
+    "PRINTING COMPARED TO ISOOSMOTIC"
     k+=1
     for i_cond in range(len(array_unique_effet)) :
         a=df_ratio['ratio'][(df_ratio['cond']==array_unique_effet[i_cond])]
@@ -353,14 +353,14 @@ charray_segm_results_import=np.load('charray_segm_all_results_2025_10_29.npy')
 #line 10: OBSOLETE
 #line 11: Intermediate variable for nano-obstacle excluded volume computation
 
-"---création du charray_combined qui combine les résultats FRAP et SEGM---"
+"---création of the char array charray_combined which combines results from  FRAP et SEGM---"
 N_l_frap=charray_frap_results_import.shape[0]
-N_l_segm=charray_segm_results_import.shape[0]-2#-3 pour enlever la redondance des infos cellule : effet, n_cell, zone mais 1+ pour rajouter 'cell_vol'
-charray_combined_results=np.zeros((N_l_frap+N_l_segm,0),dtype='object') #définition du charray combined
+N_l_segm=charray_segm_results_import.shape[0]-2# to remove redundancy in metadata : effet (experiment type), n_cell (cell unique ID), zone (cell region HP or LP) and add the relative cell volume 'cell_vol'
+charray_combined_results=np.zeros((N_l_frap+N_l_segm,0),dtype='object')
 
-"liste des effets à étudier dans les corrélations et les fits théoriques"
+"list of effects (osmolarities) to study for correlations and theoretical model fits"
 array_unique_effet_tostudy=np.array(['300','450','600','900'])
-"liste des effets/cell/zones présents dans les datasets"
+"list of effets/cell/zones present in datasets"
 array_effet=charray_frap_results_import[0,:]
 array_cell=charray_frap_results_import[1,:]
 array_zone=charray_frap_results_import[2,:]
@@ -376,23 +376,23 @@ for i_effet in range (len(array_unique_effet_tostudy)):
         
         for i_zone in range(len(array_local_zone_unique)) :
             k_zone=array_local_zone_unique[i_zone]
-            
-            "recherche d'une correspondance entre le dataset (cellule,zone,effet) du charray_frap et celui du charray_segm"
+
+            "search for a match between FRAP metadata and SEGM metadata (cell, zone, effect)"
             i_correspondance_frap=(charray_frap_results_import[0,:]==effet)*(charray_frap_results_import[1,:]==str(int(k_cell)))*(charray_frap_results_import[2,:]==k_zone)
             i_correspondance_segm=(charray_segm_results_import[0,:]==effet)*(charray_segm_results_import[1,:]==str(int(k_cell)))*(charray_segm_results_import[2,:]==k_zone)
-            "si pas de correspondance : les données ne sont pas récupérées"
+            "if no match found: data is not recovered"
             if True in i_correspondance_frap:
                 charray_combined_results_sub=np.concatenate((charray_frap_results_import[:,i_correspondance_frap],charray_segm_results_import[2:,i_correspondance_segm]))
                 charray_combined_results_sub[N_l_frap,0]='rel_cell_vol'
-                if effet=='300': #pas de calcul du volume relatif
+                if effet=='300': #no relative volume computation for ISOOSMOTIC data (300mosm)
                     charray_combined_results_sub[5,0]=1.0
-                else : #récupération du volume pour la condition ISO et l'autre condition. [0] car ya deux zones : LP/HP (même cellule donc même volume)
+                else : #recovery of the cell volume in iso-osmotic condition and after hyper-osmotic shock 
                     if True in (charray_segm_results_import[0,:]=='300')*(charray_segm_results_import[1,:]==str(int(k_cell))) :
                         vol_iso=np.float64(M_cell_vol[(charray_segm_results_import[0,:]=='300')*(charray_segm_results_import[1,:]==str(int(k_cell)))][0])
 
                     vol_noniso=np.float64(M_cell_vol[(charray_segm_results_import[0,:]==effet)*(charray_segm_results_import[1,:]==str(int(k_cell)))][0])                 
                     charray_combined_results_sub[5,0]=vol_noniso/vol_iso
-                #on ajoute à chaque fois les nouvelles données au charray_combined
+                #new data is added to the combined char array
                 charray_combined_results=np.concatenate((charray_combined_results,charray_combined_results_sub),axis=1)
 
 
@@ -400,12 +400,12 @@ for i_effet in range (len(array_unique_effet_tostudy)):
 "=============== DATAFRAME CREATION ======================"
 "=========================================================================="  
 
-"création d'une version dataframe"
+"creation of a dataframe from the char array"
 df_combined_results= pd.DataFrame(np.transpose(charray_combined_results), columns=['cond','cell','region','diff','','vol_r','','bin_poro','bin_nano','bin_micro','','prop_poro','prop_nano','prop_micro'])
 df_combined_results[['cell','diff','vol_r','bin_poro','bin_nano','bin_micro','prop_poro','prop_nano','prop_micro']] = df_combined_results[['cell','diff','vol_r','bin_poro','bin_nano','bin_micro','prop_poro','prop_nano','prop_micro']].apply(pd.to_numeric) 
 
   
-"===AJOUT DE NOUVELLES VARIABLES ====="
+"===ADDING new variables====="
 "OBSOLETE NANO-OBSTACLE COMPUTATION METHOD CALLED PROPORTIONAL"
 variable=np.array(df_combined_results['prop_nano'],dtype=float)+np.array(df_combined_results['prop_micro'],dtype=float)
 df_variable=pd.DataFrame(columns=['prop_s_tot'], data=variable)
@@ -417,7 +417,7 @@ variable=np.array(df_combined_results['bin_nano'],dtype=float)+np.array(df_combi
 df_variable=pd.DataFrame(columns=['bin_s_tot'], data=variable)
 df_combined_results=pd.concat([df_combined_results,df_variable],axis=1)
 
-"GOOD COMPUTATION METHOD"
+"GOOD COMPUTATION METHOD "binary corrected""
 variable=1-np.array(df_combined_results['prop_poro'],dtype=float)-np.array(df_combined_results['bin_micro'],dtype=float)
 df_variable=pd.DataFrame(columns=['bin_cor_nano'], data=variable)
 df_combined_results=pd.concat([df_combined_results,df_variable],axis=1)
@@ -438,7 +438,7 @@ variable=np.divide(np.array(df_combined_results['bin_cor_nano'],dtype=float),np.
 df_variable=pd.DataFrame(columns=['bin_cor_ratio_nano_tot'], data=variable)
 df_combined_results=pd.concat([df_combined_results,df_variable],axis=1)
 
-"evolution viscosité cytosolic modèle solvant idéal"
+"cytosolic viscosity evolution with cell relative volume - ideal solvent model"
 L_k=[0,0.5,1,1.5,2]#[0,0.5,1,1.5,2,-0.5,-1,-2]
 def relative_cytosolic_viscosity(rel_vol,k):
     return (1+k*(1/rel_vol))/(1+k)
@@ -448,12 +448,12 @@ for k in L_k:
     df_combined_results=pd.concat([df_combined_results,df_variable],axis=1)
 
     
-sorting='zone' #'zone' manière d'agencer les boites à moustaches sur le BOXPLOT
+sorting='zone' #boxplot box sorting
 array_unique_effet=['300','450','600','900']
 array_unique_zone=['HP','LP']
 
 "=========================================="
-"D GFP boxplot des données frap "
+"D GFP boxplot of FRAP diffusivity data "
 "=========================================="
 bars_mode='meanstd' #horizontal bars in data plotting correspond to mean value and +- standard deviations
 
@@ -476,14 +476,14 @@ L_color_local=['#00ABF0','#008FC8','#0072A0','#005678']
 P26_boxplot_and_violinplot(array_unique_effet,array_unique_zone,df_combined_results,x_var,y_var,hue_var,hue_var_label,title,xlim,ylim,xlabel,ylabel,figsize,bars_mode,restriction=restriction,L_color=L_color_local)
 
 "=========================================="
-"D GFP RATIO affichage ratio pour chaque cellule LP/HP"
+"D GFP RATIO printing HP/LP ratio pour for each cell
 "=========================================="
 "median et q1q3"
 x_var='cond'; y_var='diff' ; hue_var='' ; 
 xlabel='Osmolarity [mOsm]'; ylabel='Relative diffusivity'  ; hue_var_label=None
 xlim=[-0.5,3.5];ylim=[0.4,1.4]
 L_color_local=['#8C8C8C','#787878','#646464','#505050']
-title='d gfp relatif LP/HP'+bars_mode
+title='relative d gfp  LP/HP'+bars_mode
 P26_boxplot_and_violinplot_ratioLPHP(array_unique_effet,array_unique_zone,df_combined_results,x_var,y_var,hue_var,title,xlabel,ylabel,hue_var_label,ylim,figsize,bars_mode,L_color=L_color_local)
 
 
@@ -496,7 +496,7 @@ for cond in np.unique(df_combined_results['cond']):
     print(cond+'mOsm, 1 sample t-test, p='+str(p))
 
 "=========================================="
-"CELLVOL HISTOGRAMME ABSOLU "
+"CELL volume absolute histogram "
 "=========================================="
 fig, axg = plt.subplots(figsize=[5/2.54,5/2.54],dpi=800)
 data_cellvol_iso=np.array(charray_segm_results_import[3,(charray_segm_results_import[0,:]=='300')*(charray_segm_results_import[2,:]!='LP')],dtype=np.float64)
@@ -519,13 +519,13 @@ L_color_local=['#8C8C8C','#787878','#646464','#505050']
 P26_boxplot_and_violinplot(array_unique_effet,array_unique_zone,df_combined_results,x_var,y_var,hue_var,hue_var_label,title,xlim,ylim,xlabel,ylabel,figsize,bars_mode,restriction=restriction,L_color=L_color_local)
 
 "=========================================="
-"SEGM PROP boxplot des données segm : segm prop"
+"Normalized fluorescence results printing"
 "=========================================="
 figsize=[3/2.54,5/2.54]
 x_var='region'; y_var='prop_poro' ; hue_var=None
 xlabel='Cytoplasm region'; ylabel='Normalized fluorescence'  ; hue_var_label=None
 xlim=[-0.5,1.5]; ylim=[.4,1.2]
-title='norm fluo HP LP ISO '+bars_mode
+title='normalized fluo HP LP ISO '+bars_mode
 restriction=('cond',['300'])
 L_color_local=['#00ABF0','#FE351A']
 P26_boxplot_and_violinplot(array_unique_effet,array_unique_zone,df_combined_results,x_var,y_var,hue_var,hue_var_label,title,xlim,ylim,xlabel,ylabel,figsize,bars_mode,restriction=restriction,L_color=L_color_local)
@@ -603,7 +603,7 @@ x_cb_ex_micro=np.concatenate((np.array([0]),x_cb_ex_micro))
 y_cb_ex_micro=np.concatenate((np.array([0]),y_cb_ex_micro))
 
 
-"2b - affichage évolution viscosité cytosolique avec le volume"
+"2b - printing cell viscosity increase with reduced cell volume"
 L_rel_vol=np.arange(0.5,1.01,0.01)
 
 M_rel_viscosity=np.zeros((len(L_k),len(L_rel_vol)))
@@ -614,7 +614,7 @@ for i_k in range(len(L_k)):
         M_rel_viscosity[i_k,i]=relative_cytosolic_viscosity(rel_vol,k)
 
 
-"AFFICHAGE CORRECTION VARIATION DIFFUSIVITE CYTOSOLIQUE"
+"PRINTING CORRECTION FOR CYTOSOLIC DIFFUSIVITY DEPENDENCE ON OMSOLARITY "
 #plt.figure(dpi=400,figsize=[9,6])
 for i_k in range(len(L_k[:3])): 
     k=L_k[i_k+1]
@@ -637,9 +637,9 @@ for i_k in range(len(L_k[:3])):
     
 
 "=========================================================================="  
-"3 - définition fonction de fit théorie-expérience"
+"3 - Definition of the model-experiment fitting function"
 "=========================================================================="  
-"=== APPLICATION CORRECTION VARIATION VISCOSITE CYTOSOLIQUE ==="
+"=== APPLICATION of CYTOSOLIC VISCOSITY VARIATION CORRECTION ==="
 def P25_correction_variation_viscosite_cytosolique(df_combined_results,k):
     array_unique_effet=unique_string(df_combined_results['cond'])
     
@@ -669,7 +669,7 @@ for k in L_k:
     print('k='+str(k)+', L_correction='+str(L_correction))
     
 
-"=== AFFICHAGE OSMOTIC SHIFT REFERENCE POROSITE ==="
+"=== PRITING THE SHIFTED VALUES FOR NUCLEOPLASM POROSITY REFRENCE, which depends on osmolarity ==="
 def poro_ref(vol_r,poro_ref_iso):
     return 1-vol_r**(-1)*(1-poro_ref_iso)
 
@@ -684,12 +684,12 @@ for i_poro_ref_iso in range(len(L_poro_ref_iso)):
         
 plt.xlabel(r'Relative cell volume $V_r$')
 plt.ylabel('Porosity reference')
-plt.title('Evolution poro ref nucléoplasme avec les chocs osmotiques')
+plt.title('Nucleoplasm porosity reference dependence on cell vol')
 plt.xticks(ticks=[0.5,0.6,0.7,0.8,0.9,1], labels=[str(x) for x in [0.5,0.6,0.7,0.8,0.9]]+['Iso-osmotic'])
 plt.grid()
 plt.legend()
 
-"=== APPLICATION CORRECTION REFERENCE POROSITE ==="
+"=== APPLICATION of the shifted values for nucleoplasm porosity ==="
 def P25_correction_porosite_reference(df_combined_results,poro_ref_iso,osmotic_ref_shift=True):
     m_variable=np.zeros((0,6))
     for effet in array_unique_effet: 
@@ -738,7 +738,7 @@ for osmotic_ref_shift in L_osmotic_ref_shift:
         df_combined_results=P25_correction_porosite_reference(df_combined_results,poro_ref_iso,osmotic_ref_shift) 
         
        
-"=== DEFINITION DE df_combined_results_mean==="
+"=== DEFINITION of the dataframe for mean results df_combined_results_mean==="
 df_combined_results_mean= pd.DataFrame().reindex(columns=df_combined_results.columns)
 df_combined_results_std= pd.DataFrame().reindex(columns=df_combined_results.columns)
 for condition in unique_string(df_combined_results['cond']):
@@ -751,7 +751,7 @@ for condition in unique_string(df_combined_results['cond']):
         df_combined_results_std['cond'].loc[len(df_combined_results_std)-1]=condition
         df_combined_results_std['region'].loc[len(df_combined_results_std)-1]=region
         
-"=== DEFINITION DE df_combined_results_median==="
+"=== DEFINITION of the dataframe for median results df_combined_results_median==="
 df_combined_results_median= pd.DataFrame().reindex(columns=df_combined_results.columns)
 df_combined_results_q1= pd.DataFrame().reindex(columns=df_combined_results.columns)
 df_combined_results_q3= pd.DataFrame().reindex(columns=df_combined_results.columns)
@@ -788,19 +788,18 @@ L_color_micro=list(L_color_micro)
 
 array_order=np.array(['300','450','600','900'])
 volume_type='ex' #ex for excluded or oc for occupied for 3D cfc ribosomes without intersection
-"MEDIAN/MEANSTD affichage des jeux de données porosité corrigée pour les différentes hypothèses"
+"MEDIAN/MEANSTD priting data for corrected porosity for different input parameter values"
 
-for i_method in range(len(L_method)):
-    for osmotic_ref_shift in L_osmotic_ref_shift:
-        for poro_ref_iso in L_poro_ref_iso:
+for i_method in range(len(L_method)): #segmentation method
+    for osmotic_ref_shift in L_osmotic_ref_shift: #should nucleoplasm porosity shift be applied? or constant porosity?
+        for poro_ref_iso in L_poro_ref_iso: #value of porosity in isoomotic condition
             poro_correction=', ref='+str(poro_ref_iso)+', shift='+str(osmotic_ref_shift)
-            for i_region in range(2):
+            for i_region in range(2): #cell region in HP and LP
                 region=['HP','LP'][i_region]
                 if i_region==0:
                     L_color_local=['#00ABF0','#008FC8','#0072A0','#005678']
                 elif i_region==1:
                     L_color_local=['#FE351A','#EF1D01','#C71901','#9F1401']
-                "méthode proportionnelle" 
                 for i_variable in range(2):
                     plt.figure(figsize=figsize,dpi=800)
                     plt.title(region+', '+L_method[i_method]+'-ref='+str(poro_ref_iso)+', Osm. shift='+str(osmotic_ref_shift)+', '+bars_mode+'i_var='+str(i_variable),font=font,fontsize='x-small')
@@ -876,9 +875,9 @@ for i_method in range(len(L_method)):
 
     
 def P25_fit_exp_model(X_experimental,Y_experimental,model_type,solid_repartition=('% nano',0.7),verbosity=1):
-    if solid_repartition[0]=='cte micro':
+    if solid_repartition[0]=='cte micro': #hypothesis: the volume fraction of micro-obstacles Phi_m is fixed
         #if verbosity:
-            #print('IL EST IMPORTANT DE VERIFIER QUE x_var=fraction NANO!!!')
+            #print('THE SELECTED X-variable should be the nano-obstacles fraction!!!')
         f_micro=solid_repartition[1]
         
         if model_type=="tortuosity":
@@ -901,7 +900,7 @@ def P25_fit_exp_model(X_experimental,Y_experimental,model_type,solid_repartition
                 return effect_diff 
         
             
-    "7 - procédure de fit appliquée aux données corrigées (éventuellement binnées)"
+    "7 - application of the fitting procedure to corrected (and/or binned) data"
     popt, pcov = curve_fit(function_to_fit, X_experimental, Y_experimental)     
     error=np.mean([(Y_experimental[i]-function_to_fit(X_experimental[i], *popt))**2 for i in range(len(X_experimental))])
     return function_to_fit, popt, error
@@ -998,7 +997,7 @@ def P25_model_fitting_and_plot_for_article(df_combined_results,df_combined_resul
     plt.show()
     
   
-"====== 2024 03 28 AFFICHAGE FONCTIONS POREUX NORMEES==="
+"====== 2024 03 28 PRITING OF MULTISCALE MODEL NON-FITTED PREDICTIONS==="
 L_model=['tortuosity','hydrodynamic','combined']
 L_model_label=['Tortuosity only (TH)','Hydrodynamic only (HH)','Full model']
 f_micro=0.08
@@ -1043,7 +1042,7 @@ plt.show()
 "=========================================================================="
 "2025 05 22 MODEL FIT WITH BOOTSTRAPING"
 "=========================================================================="
-"1 -- AFFICHAGE DES FITS SEPARES SANS CORRECTION"
+"1 -- PRINT OF EACH FIT"
 #L_k_visc_cyto=[]#value of the cytosolic viscosity constant k 
 L_osmotic_ref_shift=[True]
 L_poro_ref_iso=[0.85]
@@ -1192,7 +1191,7 @@ for i_restriction in range(len(L_restrictions)):
     
     
 figsize=[5/2.54,5/2.54]
-"2 -- AFFICHAGE évolution DIFFUSIVITY cytosolique avec le volume"
+"2 -- PRINT CYTOSOLIC DIFFUSIVITY EVOLUTION WITH RELATIVE CELL VOLUME"
 L_rel_vol=np.arange(0.6,1.01,0.01)
 M_rel_viscosity=np.zeros((len(L_k),len(L_rel_vol)))
 for i_k in range(len(L_k)):
@@ -1206,13 +1205,13 @@ plt.plot(L_rel_vol,M_rel_viscosity[0,:],'--',color='grey',linewidth=1)
 plt.plot(L_rel_vol,1/M_rel_viscosity[2,:],color='grey')
 plt.fill_between(L_rel_vol, 1/M_rel_viscosity[1,:], 1/M_rel_viscosity[3,:],alpha=0.3,color='grey',linewidth=0)
 
-"calcul des incertitudes (standard dev) sur le ratio de diffusivité cytosolique via résultats bootstrap 2025 05 22"
-"propagation des incertitudes d'après https://en.wikipedia.org/wiki/Propagation_of_uncertainty voir calculs sur mon cahier"
+"computation of uncertainties (std) on cytosolic diffusivity ratio using bootstrap results 2025 05 22"
+"propagation of uncertainties from https://en.wikipedia.org/wiki/Propagation_of_uncertainty"
 def std_ratio_a_b(a,b,std_a,std_b): #for a and b independent
     return ((std_a/b)**2+(a*std_b)**2/b**4)**(1/2)
 
 
-"données std en provenance de L_std_D_alpha_0"
+"standard deviation data from L_std_D_alpha_0"
 "Full model 5img classical data"
 yerr=[0,std_ratio_a_b(25.3,28.0,0.75,0.67),std_ratio_a_b(22.1,28.0,0.66,0.67)]
 plt.errorbar([1,0.80,0.72],[1,25.3/28.0,22.1/28.0],xerr=[0,0.05,0.07],yerr=yerr,marker='',linestyle='-',color='k',capsize=3)#,linewidth=1#,xerr=[0,0.05,0.07]
@@ -1241,9 +1240,8 @@ plt.show()
 "=========================================================================="
 """STUDY OF DIFFUSIVITY DEPENDANCE WItH PARTICLE SIZE"""
 "=========================================================================="
-gfp_mass=27 # en kda
-r_gfp=2.3   # en nm
-"=== PASSAGE R INTERP A 4NM POUR AVOIR RESULTATS LUBY PHELPS"
+gfp_mass=27 # in kda
+r_gfp=2.3   # in nm
 r_interp_y=3.50 #en nm  #arbitrary particle radius taken for data normalization
 
 "Bubak 2021 : dextrans from 4.4 to 155Kda, in cytoplasm"
@@ -1307,7 +1305,7 @@ if micro_solid=='3d_r200nm':
 
 
 
-# "2 - affichage réduction diffusivité pour solides représentatifs pour nano et micro solides sélectionnés "
+# "2 - pring of diffusivity reduction for given selection nano and micro obstacles configurations"
 # plt.figure(dpi=400,figsize=[6,6])
 # plt.plot(x_particle_radius,1-y_cb_particle_radius_nano,'k-',label='Full model')
 # plt.plot(x_particle_radius,1-y_hd_particle_radius_nano,'k--',label='HDH only')
@@ -1381,7 +1379,7 @@ L_weight=np.size(X_bubak)*[1/np.size(X_bubak)]+np.size(X_baum)*[1/np.size(X_baum
 # plt.show()
 
 
-"2025 05 27 version affichage ARTICLE"
+"2025 05 27 version for print in article"
 fig=plt.figure(dpi=800,figsize=[9/2.54,9/2.54])
 L_line_type=['-','--',':']
 L_R=np.linspace(0,10,100)
