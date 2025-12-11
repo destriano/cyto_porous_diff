@@ -417,7 +417,7 @@ variable=np.array(df_combined_results['bin_nano'],dtype=float)+np.array(df_combi
 df_variable=pd.DataFrame(columns=['bin_s_tot'], data=variable)
 df_combined_results=pd.concat([df_combined_results,df_variable],axis=1)
 
-"GOOD COMPUTATION METHOD "binary corrected""
+"GOOD COMPUTATION METHOD binary corrected"
 variable=1-np.array(df_combined_results['prop_poro'],dtype=float)-np.array(df_combined_results['bin_micro'],dtype=float)
 df_variable=pd.DataFrame(columns=['bin_cor_nano'], data=variable)
 df_combined_results=pd.concat([df_combined_results,df_variable],axis=1)
@@ -476,7 +476,7 @@ L_color_local=['#00ABF0','#008FC8','#0072A0','#005678']
 P26_boxplot_and_violinplot(array_unique_effet,array_unique_zone,df_combined_results,x_var,y_var,hue_var,hue_var_label,title,xlim,ylim,xlabel,ylabel,figsize,bars_mode,restriction=restriction,L_color=L_color_local)
 
 "=========================================="
-"D GFP RATIO printing HP/LP ratio pour for each cell
+"D GFP RATIO printing HP/LP ratio pour for each cell"
 "=========================================="
 "median et q1q3"
 x_var='cond'; y_var='diff' ; hue_var='' ; 
