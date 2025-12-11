@@ -44,7 +44,7 @@ def moving_average2(x,n1,n2): #Apply 2D moving average smoothing using a convolu
     return  signal.convolve2d(x, w, mode='same', boundary='symm')/ somme
 
 
-def P25_extraction_data_FRAP(path_data,name_0,L_indices,T_fading,background_value,N_rafale_separees,N_rafale_fichier,i_postbleach): #T_fading : tuple particulier pour corriger le fading, voir fonction build_image  
+def P25_extraction_data_FRAP(path_data,name_0,L_indices,T_fading,background_value,N_rafale_separees,N_rafale_fichier,i_postbleach): #T_fading : tuple with instructions for correcting fading. Also see the build_image function
     #"Extract and average FRAP image data across multiple repetitions.
     N_cellules=len(L_indices)
     T_img_array=()
@@ -219,7 +219,7 @@ background_value=0 #fluorescence background level to be subtracted from data
 "=========================================================================="
 "====================== FRAP ANALYSIS ==============================="
 "=========================================================================="
-"importation des données expérimentales"
+"experimental data import"
  
 
 #FRAP numerical parameters
@@ -291,3 +291,4 @@ for i_effet in range (len(array_unique_effet)):
 
 
     
+
