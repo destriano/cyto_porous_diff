@@ -29,35 +29,35 @@ import random
 "========================================================"
 "========================================================"
 
-def P18_2D_gmsh_generator(Radius,Radius_inerte,Length,Mesh_size,geom,N_obstacles,file_name,MATRICE_OBSTACLES,refine_obstacle=1,show_geometry=0): #routine d'appel à gmsh pour génération du maillage
-    #Radius : rayon de l'obstacle (sphère ou cylindre)
-    #Length : longueur (prise en compte seulement pour cylindre)
-    #Mesh_size : taille caract du maillage
-    #N_obstacles : nombre d'obstacles
-    #file_name : nom pour l'enregistrement des fichiers 
-    #MATRICE_OBSTACLES : coordonnées des obstacles, utile uniquement en géométrie aléatoire pour reprendre une config existante
+def P18_2D_gmsh_generator(Radius,Radius_inerte,Length,Mesh_size,geom,N_obstacles,file_name,MATRICE_OBSTACLES,refine_obstacle=1,show_geometry=0): #mesh generation
+    #Radius : obstacle radius
+    #Length : obstacle length (only for cylinder)
+    #Mesh_size : mesh typical size
+    #N_obstacles : number of obstacles
+    #file_name : name for file saving
+    #MATRICE_OBSTACLES : obstacles coordinates, only useful for random geometries when reusing a previously defined configuration
     
     L_t=[time.time()]   
     gmsh.initialize()  
     gmsh.option.setNumber('General.Verbosity', 1)
-    gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1) #pourquoi?
-    eps = 1e-3 #tolérance
+    gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1) 
+    eps = 1e-3 #tolerance
     gmsh.model.add("modele")  
-    #refine_obstacle=1 #raffinement du maillage près des surfaces des obstacles
+    #refine_obstacle=1 #mesh refinement near obstacles
     
     "========================================================"
-    "DEFINITION GEOMETRIE"
-    if geom==0: #disque dans rectangle, NON PERIODIQUE
+    "GEOMETRiCAL DEFINItiON"
+    if geom==0: #disk in rectangle, not periodical
         return "non disponible"
         # gmsh.model.occ.addRectangle(0,0,0,2,1,100)       
-        # gmsh.model.occ.synchronize() #maj geometrie     
-        # gmsh.model.addPhysicalGroup(1, [1], 12) #bas
-        # gmsh.model.addPhysicalGroup(1, [2], 13) #droite
-        # gmsh.model.addPhysicalGroup(1, [3], 14) #haut
-        # gmsh.model.addPhysicalGroup(1, [4], 15) #gauche
+        # gmsh.model.occ.synchronize() #geometry update    
+        # gmsh.model.addPhysicalGroup(1, [1], 12) #low
+        # gmsh.model.addPhysicalGroup(1, [2], 13) #right
+        # gmsh.model.addPhysicalGroup(1, [3], 14) #top
+        # gmsh.model.addPhysicalGroup(1, [4], 15) #left
         # L_volume=[100]
         
-    elif geom==1: #5 disques dans carré unité, 2 groupes, PERIODIQUE
+    elif geom==1: #5 disk in unit square, 2 groups, PERIODIC
         return "non disponible"
         # gmsh.model.occ.addRectangle(0,0,0,1,1,100)
         # gmsh.model.occ.addDisk(0.5,0.5,0,Radius_inerte,Radius_inerte,101)
@@ -66,85 +66,84 @@ def P18_2D_gmsh_generator(Radius,Radius_inerte,Length,Mesh_size,geom,N_obstacles
         # gmsh.model.occ.addDisk(0.75,0.25,0,Radius,Radius,104)
         # gmsh.model.occ.addDisk(0.75,0.75,0,Radius,Radius,105)
         # gmsh.model.occ.cut([(2, 100)], [(2,101),(2,102),(2,103),(2,104),(2,105)]) 
-        # gmsh.model.occ.synchronize() #maj geometrie    
-        # gmsh.model.addPhysicalGroup(1, [5], 3)          #obstacle central
-        # gmsh.model.addPhysicalGroup(1, [6,7,8,9], 4)          #obstacles périphériques
+        # gmsh.model.occ.synchronize()   
+        # gmsh.model.addPhysicalGroup(1, [5], 3)          #central obstacle
+        # gmsh.model.addPhysicalGroup(1, [6,7,8,9], 4)          #peripheral obstacles
         # L_volume=[100]
         
-    elif geom==2: #disque 2D centré
+    elif geom==2: #2D centered disk
         gmsh.model.occ.addRectangle(0,0,0,1,1,100)
         gmsh.model.occ.addDisk(0.5,0.5,0,Radius,Radius,101)
         gmsh.model.occ.cut([(2, 100)], [(2,101)])         
-        gmsh.model.occ.synchronize() #maj geometrie     
-        L_volume=[100]#nom volume pour groupe physique
+        gmsh.model.occ.synchronize()  
+        L_volume=[100]#volume name for physical group
         
-    elif geom==21: #geométrie disque2D centré avec cadre pour continuité du domaine
+    elif geom==21: #OBSOLETE 2D centered disk geometry with fluid contour
         gmsh.model.occ.addRectangle(0,0,0,1,1,100)
         gmsh.model.occ.addDisk(0.5,0.5,0,Radius,Radius,101)
         gmsh.model.occ.cut([(2, 100)], [(2,101)])   
-        gmsh.model.occ.synchronize() #maj geometrie 
-        L_all=gmsh.model.getEntities(2) #je récupère les morceaux du cut, qu'il y en ai un ou plusieurs
+        gmsh.model.occ.synchronize() 
+        L_all=gmsh.model.getEntities(2) 
         
         gmsh.model.occ.addRectangle(0,0,0,1,1,202)
         gmsh.model.occ.addRectangle(0.001,0.001,0,0.998,0.998,203)
-        gmsh.model.occ.cut([(2, 202)], [(2,203)]) #créaton du cadre fin autour du domaine
-        gmsh.model.occ.synchronize() #maj geometrie 
+        gmsh.model.occ.cut([(2, 202)], [(2,203)]) #FLUID frame generation
+        gmsh.model.occ.synchronize()  
 
         for i in range(len(L_all)):
-            gmsh.model.occ.fuse([(2, 202)],[L_all[i]])   #fusion des morceaux de domaine et du cadre   
-        gmsh.model.occ.synchronize() #maj geometrie 
-        L_volume=[202] #nom volume pour groupe physique
+            gmsh.model.occ.fuse([(2, 202)],[L_all[i]])    
+        gmsh.model.occ.synchronize() 
+        L_volume=[202] 
         
-    elif geom==4 : #disque 2D aléatoires avec superposition
+    elif geom==4 : #2D randomly position disks, periodic
         gmsh.model.occ.addRectangle(0,0,0,1,1,100)  
         k=0
         for i_fibre in range(N_obstacles):
-            if MATRICE_OBSTACLES[-1,0]==0: #pas de matrice obstacle : on crée une nouvelle géométrie
-                xa_1=random.random() #définition du premier point : centre de la base du cylindre
+            if MATRICE_OBSTACLES[-1,0]==0: #new obstacle position generation
+                xa_1=random.random() 
                 ya_1=random.random()
-                MATRICE_OBSTACLES[i_fibre,:]=[xa_1,ya_1,Radius]   #sauvegarde de la géométrie        
-            else : #matrice obstacle en entrée : on récupère la géométrie définie
+                MATRICE_OBSTACLES[i_fibre,:]=[xa_1,ya_1,Radius]   #saving obstacle position for ulterior use      
+            else : #matrice obstacle is given: we reuse previously defined geometry
                 [xa_1,ya_1]=MATRICE_OBSTACLES[i_fibre,:2] 
                        
-            Radius_eq=np.sqrt(Radius**2+(Length/2)**2) #rayon de la sphère de colision associée au cylindre
-            for d_x in range(-1,2): #selon chaque axe : on ajoute 27 fois l'obstacle
+            Radius_eq=np.sqrt(Radius**2+(Length/2)**2) #spheric collision radius for the cylinder
+            for d_x in range(-1,2): #each obstacle must be added 27 times to ensure periodicity
                 for d_y in range(-1,2):
                     for d_z in range(-1,2):     
-                        #definition critere : si la sphere de colision est trop loin du pt (0.5,0.5,0.5) alors ca ne sert à rien d'ajouter l'obstacle
+                        #criterion: if obstacle sufficiently far from domain, useless to add it
                         Critere_cube=max([abs(xa_1+d_x-0.5),abs(ya_1+d_y-0.5)])
-                        if not Critere_cube>0.5+Radius_eq+eps: #la sphère de colision est susceptible d'intersecter le cube unité            
+                        if not Critere_cube>0.5+Radius_eq+eps: #obstacle may interesect the fluid domain we must add it            
                             gmsh.model.occ.addDisk(xa_1+d_x,ya_1+d_y,0,Radius,Radius,1000+k)
-                            k+=1 #compte le nombre d'obstacle effectivement ajoutés                           
-        gmsh.model.occ.synchronize() #maj geometrie pour synchro MODEL avec OCC        
+                            k+=1 #number of obstacles added                           
+        gmsh.model.occ.synchronize() # synchronization MODEL with OCC        
         L_volume=[100]
-        #cut des obstacles (dont la majorité devrait couper le cube, mais pas forcément tous)
         All_volumes=gmsh.model.getEntitiesInBoundingBox(-2-eps,-2-eps,-2-eps,3+eps,3+eps,3+eps,2)
         Main_volume=[(2,100)] #volume du cube unité 
-        Cut_volumes=list(set(All_volumes)-set(Main_volume)) #liste des obstacles à retirer
-        gmsh.model.occ.cut(Main_volume,Cut_volumes) #beaucoup plus efficace de retirer toute la liste d'un coup
-        gmsh.model.occ.synchronize() #maj geometrie     
-        #suppression des volumes interieurs isolés
-        Internal_volumes=gmsh.model.getEntitiesInBoundingBox(+eps,+eps,-eps,1-eps,1-eps,+eps,2) #morceaux intérieurs au cube unité   
-        gmsh.model.occ.remove(Internal_volumes) #suppression des volumes intérieurs du cube
+        Cut_volumes=list(set(All_volumes)-set(Main_volume)) #obstacles to remove
+        gmsh.model.occ.cut(Main_volume,Cut_volumes) 
+        gmsh.model.occ.synchronize()    
+        #suppression of isolated internal fluid volumes
+        Internal_volumes=gmsh.model.getEntitiesInBoundingBox(+eps,+eps,-eps,1-eps,1-eps,+eps,2) 
+        gmsh.model.occ.remove(Internal_volumes) 
        
     "========================================================"
-    "GROUPES PHYSIQUES"
+    "PHYSICAL GROUPS"
     L_bordcarre=Recherche_bords(eps) 
     L_pos_all=[x[1] for x in gmsh.model.getEntities(1)]
     L_obstacle=list(set(L_pos_all)-set(L_bordcarre)) 
 
-    gmsh.model.addPhysicalGroup(2, L_volume, 1) #volume de résolution du domaine
+    gmsh.model.addPhysicalGroup(2, L_volume, 1) #fluid volume domain
     gmsh.model.addPhysicalGroup(1, L_bordcarre,2)
     gmsh.model.addPhysicalGroup(1, L_obstacle,3)
     
     "========================================================"
-    "BORDS PERIODIQUES"
+    "PERIODIC BOUNDARIES"
     Set_periodic_boundaries(eps)
 
     "========================================================"
-    "MAILLAGE"
+    "MESHING"
     gmsh.model.mesh.setSize(gmsh.model.getEntities(0), Mesh_size)
-    if refine_obstacle: #rafinage du maillage près des obstacles
+    if refine_obstacle: #mesh refinement near obstacles
         gmsh.model.mesh.field.add("Distance", 1)
         #gmsh.model.mesh.field.setNumbers(1, "PointsList", [5])
         gmsh.model.mesh.field.setNumbers(1, "CurvesList", L_obstacle)
@@ -154,20 +153,20 @@ def P18_2D_gmsh_generator(Radius,Radius_inerte,Length,Mesh_size,geom,N_obstacles
         gmsh.model.mesh.field.setNumber(2, "SizeMin", Mesh_size / 5)
         gmsh.model.mesh.field.setNumber(2, "SizeMax", Mesh_size)
         gmsh.model.mesh.field.setNumber(2, "DistMin", 0)
-        gmsh.model.mesh.field.setNumber(2, "DistMax", min(0.5-Radius,0.1))   #pour éviter le bug qu'on on met distmax>distance au bord     
+        gmsh.model.mesh.field.setNumber(2, "DistMax", min(0.5-Radius,0.1))    
         gmsh.model.mesh.field.setAsBackgroundMesh(2)        
         gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 0)
         gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
         gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)      
         gmsh.option.setNumber("Mesh.Algorithm", 5)  
     gmsh.model.mesh.generate(2)
-    #Visualisation du maillage(/géométrie) obtenu (STOPPE LE PROGRAMME)
+    #shows the obtained mesh, pauses the program until popup window is closed
     if show_geometry:
         if '-nopopup' not in sys.argv:
             gmsh.fltk.run()
     
     "========================================================"
-    "EXPORTATION"   
+    "EXPORTING"   
     #gmsh.write(file_name+".brep") #
     gmsh.write(file_name+".msh")
     L_t.append(time.time())
@@ -178,28 +177,28 @@ def P18_2D_gmsh_generator(Radius,Radius_inerte,Length,Mesh_size,geom,N_obstacles
 def OLI19_solver_perm_2D(file_name):   
     L_t=[time.time()]
     mesh,ds,dx, boundaries, subdomains=OLI16_importation_mesh_2D(file_name)
-    pbc = OLI16_PeriodicBC2()   #fonction d'appairage des bords périodiques sur FEniCS
+    pbc = OLI16_PeriodicBC2()   #function for matching periodic boundaries on FEniCS
     P1,P2,V,n,V_alpha,e_vectors,u_tuple=OLI16_init_perm_fenics_2D(mesh,dx,pbc)
-    noslip = Constant((0.0, 0.0)) #vitesse nulle aux parois
-    bc_obstacle=DirichletBC(V.sub(0), noslip, boundaries,3) #"""BOUNDARY NUMBER SELON GEOMETRIE"""" #W.sub(0) c'est le vecteur vitesse 
-    bcs = [bc_obstacle] #ligne utilise s'il y'a plusieurs conditions de Dirichlet à implémenter (ici non)   
+    noslip = Constant((0.0, 0.0)) #null speed at obstacle surface
+    bc_obstacle=DirichletBC(V.sub(0), noslip, boundaries,3)  #W.sub(0) is the speed vector
+    bcs = [bc_obstacle] #useful when several Dirichlet boundary conditions to implement (not the case here)  
     
     "========================================================"
-    "ELEMENTS FINIS"
+    "FINITE ELEMENTS"
     
-    (u, p) = TrialFunctions(V) #"""ATTENTION FEniCS utilise p_prog=-p_reelle""" # Define variational problem
+    (u, p) = TrialFunctions(V) #"""WWARNING FEniCS uses p_numerical=-p_real""" # Define variational problem
     (v, q) = TestFunctions(V)
-    f = Constant((1, 0.0)) #terme source pour le probleme colonne _x (pour _y ou _z il faut changer la composante non nulle)
+    f = Constant((1, 0.0)) #source term
     a = inner(grad(u), grad(v))*dx + div(v)*p*dx + q*div(u)*dx
     L = inner(f, v)*dx
-    # PRECONDITIONNEMENT (pour améliorer conditionnement)
+    # PRECONDITIONNING
     b = inner(grad(u), grad(v))*dx + p*q*dx    # Form for use in constructing preconditioner matrix
     A, bb = assemble_system(a, L, bcs) # Assemble system
     P, btmp = assemble_system(b, L, bcs) # Assemble preconditioner system
     U = Function(V)
     # Create Krylov solver and AMG preconditioner    
     
-    solver=KrylovSolver("tfqmr", "amg") #solver préféré car plus stable, probablement un meilleur préconditionner, voir lien :  
+    solver=KrylovSolver("tfqmr", "amg") #seem to be best preconditionner, see:  
     #https://scicomp.stackexchange.com/questions/513/why-is-my-iterative-linear-solver-not-converging
     #solver = KrylovSolver("gmres")#KrylovSolver("tfqmr", "amg") solver itératif 
 #    solver.parameters["relative_tolerance"] = 1.0e-8 / solver.parameters["absolute_tolerance"] = 1.0e-6 /solver.parameters["monitor_convergence"] = True/solver.parameters["maximum_iterations"] = 1000
@@ -216,311 +215,97 @@ def OLI19_solver_perm_2D(file_name):
     # print('Temps FEniCS solve : '+str(L_t[-1]-L_t[-2])+'s')
     
     "========================================================"
-    "CALCUL VARIABLES GLOBALES"
+    "COMPUTING GLOBAL VARIABLES"
     
     # Get sub-functions
-    u, p = U.split() #séparation vecteur vitesse et pression NEGATIVE      #p=-p 
-    #Je calcule toute la première colonne du tenseur de perméabilité
-    #meme si je ne me sers que du coef kxx car 
-    #le problème de stokes résolu permet d'avoir aussi kyx et kzx gratos
+    u, p = U.split() #separation speed vector and negative pressure      #p=-p 
+    #First column computation of the permeability tensor
     V_tot=1
-    #Epsi=V_alpha/V_tot #porosité    
+    #Epsi=V_alpha/V_tot #porosity   
     kperm_px=[(1/V_tot)*assemble(dot(u,e_vectors[0])*dx(mesh)),(1/V_tot)*assemble(dot(u,e_vectors[1])*dx(mesh))] 
-    Kx=kperm_px[0] #jon considère seulement kxx car kyx et kzx sont à priori très petits
+    Kx=kperm_px[0] #we only consider kxx because kyx and kzx are expected to be very small
     #B_px=u*(Epsi/Kx)-e_vectors[0]
     #v_moy_x=1
     #v_moyint=[v_moy_x,0,0]
     #v_tilde=B_px*v_moy_x
     #v_tot=v_tilde+Constant((v_moyint[0],v_moyint[1],v_moyint[2]))     
-    #C_drag=(2*Radius**2)/(9*(1-Epsi))*(1/Kx) #coefficient de trainée utilisé par Morgan pour cas test
-    #abscisse_SU=((1-Epsi)**(1/3))/Epsi #abscisse utilisée par Morgan pour cas test  
+    #C_drag=(2*Radius**2)/(9*(1-Epsi))*(1/Kx) #variable used for validation by Morgan Chabanon & al.
+    #abscisse_SU=((1-Epsi)**(1/3))/Epsi  
     # L_t.append(time.time())
     # print('Temps FEniCS varglob : '+str(L_t[-1]-L_t[-2])+'s')
     L_t.append(time.time())
-    print('Temps FEniCS_perm total : '+str(L_t[-1]-L_t[0])+'s')  
+    print('Time FEniCS_perm total : '+str(L_t[-1]-L_t[0])+'s')  
     return (V_alpha, Kx)#,abscisse_SU,C_drag)#(abscisse_SU,C_drag,B_px,Kx,v_tot,v_tilde,v_moy_x) #Epsi,int_vtot_surf
 
 def OLI16_init_perm_fenics_2D(mesh,dx,pbc):
-    set_log_level(40) #FENICS N'affiche que les erreurs en principe, en pratique il affiche trop    
-    # Define function spaces : on utilise des éléments mixtes pour la résolution directe du problème
-    P2 = VectorElement("CG", mesh.ufl_cell(), 2) #ordre 2 nécessaire pour résolution Stokes sinon instable 
-    P1 = FiniteElement("CG", mesh.ufl_cell(), 1) #élément pour la pression
-    TH = MixedElement([P2, P1]) #élément mixte de Taylor Hood
-    V = FunctionSpace(mesh, TH,constrained_domain=pbc) #condition périodique implémentée ici    
+    set_log_level(40)   
+    # Define function spaces : we used mixed element spaces for direct resolution of the problem
+    P2 = VectorElement("CG", mesh.ufl_cell(), 2) #order 2 element necessary for Stokes resolution 
+    P1 = FiniteElement("CG", mesh.ufl_cell(), 1) #order 1 element for pressure
+    TH = MixedElement([P2, P1]) #Taylor Hood mixed element
+    V = FunctionSpace(mesh, TH,constrained_domain=pbc) #periodc boundary condition applied here 
 
-    n=FacetNormal(mesh) #structure un peu bizzare qui contient la normale ext aux parois du domaine
-    V_alpha=assemble(Constant(1.0)*dx) #on intègre l'espace pour obtenir la porosité                
+    n=FacetNormal(mesh) 
+    V_alpha=assemble(Constant(1.0)*dx)               
     e_vectors=(Constant((1,0)),Constant((0,1))) 
     u_tuple=()
     
     return P1,P2,V,n,V_alpha,e_vectors,u_tuple
 
 
-def OLI20_solver_perm_2D_darcy_brinkmann(file_name,nano_poro,nano_perm_adimnano,l_b_s_a):   
-    L_t=[time.time()]
-    mesh,ds,dx, boundaries, subdomains=OLI16_importation_mesh_2D(file_name)
-    pbc = OLI16_PeriodicBC2()   #fonction d'appairage des bords périodiques sur FEniCS
-    P1,P2,V,n,V_alpha,e_vectors,u_tuple=OLI16_init_perm_fenics_2D(mesh,dx,pbc)
-    noslip = Constant((0.0, 0.0)) #vitesse nulle aux parois
-    bc_obstacle=DirichletBC(V.sub(0), noslip, boundaries,3) #"""BOUNDARY NUMBER SELON GEOMETRIE"""" #W.sub(0) c'est le vecteur vitesse 
-    bcs = [bc_obstacle] #ligne utilise s'il y'a plusieurs conditions de Dirichlet à implémenter (ici non)   
-    
-    "========================================================"
-    "ELEMENTS FINIS"
-    
-    (u, p) = TrialFunctions(V) #"""ATTENTION FEniCS utilise p_prog=-p_reelle""" # Define variational problem
-    (v, q) = TestFunctions(V) 
-    
-    f = Constant((1, 0.0)) #terme source pour le probleme colonne _x (pour _y ou _z il faut changer la composante non nulle)
-    "f2 : terme de darcy dans la formulation faible (=a' dans mon cahier)"
-    nano_perm_adimmicro=nano_perm_adimnano/l_b_s_a**2
-    f2 = nano_poro/nano_perm_adimmicro
-    
-    a = inner(grad(u), grad(v))*dx + div(v)*p*dx + q*div(u)*dx   +f2*inner(u,v)*dx #AJOUT DU TERME DE DARCY
-    L = inner(f, v)*dx
-    b = inner(grad(u), grad(v))*dx + p*q*dx+f2*inner(u,v)*dx #+f2*inner(u,v)*dx  #inner(grad(u), grad(v))*dx + p*q*dx  # Form for use in constructing preconditioner matrix
-    # ratio=1/0.1
-    # a = ratio*(inner(grad(u), grad(v)) + div(v)*p + q*div(u)   +f2*inner(u,v))*dx #AJOUT DU TERME DE DARCY
-    # L = ratio*(inner(f, v))*dx
-    
-    # PRECONDITIONNEMENT (pour améliorer conditionnement)
-    #b = ratio*(inner(grad(u), grad(v)) + p*q)*dx    # Form for use in constructing preconditioner matrix
-    A, bb = assemble_system(a, L, bcs) # Assemble system
-    P, btmp = assemble_system(b, L, bcs) # Assemble preconditioner system
-    U = Function(V)
-    # Create Krylov solver and AMG preconditioner    
-    
-    solver=KrylovSolver("tfqmr", "amg") #KrylovSolver("gmres")#KrylovSolver("tfqmr", "amg") 
-    solver.parameters["maximum_iterations"] = 1000
-    #solver.parameters["relative_tolerance"] = 1.0e-3
-    #solver.parameters["monitor_convergence"] = True
-    #solver préféré car plus stable, probablement un meilleur préconditionner, voir lien :  
-    #https://scicomp.stackexchange.com/questions/513/why-is-my-iterative-linear-solver-not-converging
-    #solver = KrylovSolver("gmres")#KrylovSolver("tfqmr", "amg") solver itératif 
-#    solver.parameters["relative_tolerance"] = 1.0e-8 / solver.parameters["absolute_tolerance"] = 1.0e-6 /solver.parameters["monitor_convergence"] = True/solver.parameters["maximum_iterations"] = 1000
-    # Associate operator (A) and preconditioner matrix (P)
-    solver.set_operators(A, P)
-    # L_t.append(time.time())
-    # print('Temps FEniCS prepa : '+str(L_t[-1]-L_t[-2])+'s')
-    
-    "========================================================"
-    "SOLVER"
-    
-    solver.solve(U.vector(), bb)    
-    # L_t.append(time.time())
-    # print('Temps FEniCS solve : '+str(L_t[-1]-L_t[-2])+'s')
-    
-    "========================================================"
-    "CALCUL VARIABLES GLOBALES"
-    
-    # Get sub-functions
-    u, p = U.split() #séparation vecteur vitesse et pression NEGATIVE      #p=-p 
-    #Je calcule toute la première colonne du tenseur de perméabilité
-    #meme si je ne me sers que du coef kxx car 
-    #le problème de stokes résolu permet d'avoir aussi kyx et kzx gratos
-    V_tot=1
-    #Epsi=V_alpha/V_tot #porosité    
-    print('nano poro='+str(nano_poro))
-    print('f2='+str(f2))
-    
-    kperm_px=[assemble(dot(u,e_vectors[0])*dx(mesh))*(1/V_tot)*nano_poro]#[(1/V_tot)*assemble(dot(u,e_vectors[0])*dx(mesh)),(1/V_tot)*assemble(dot(u,e_vectors[1])*dx(mesh))] 
-    Kx=kperm_px[0] #jon considère seulement kxx car kyx et kzx sont à priori très petits
-    
-    pt1=(V_alpha*nano_poro/Kx)
-    pt2=(nano_poro/nano_perm_adimmicro)
-    K_star=V_alpha*(pt1-pt2)**(-1)
-    
-    #B_px=u*(Epsi/Kx)-e_vectors[0]
-    #v_moy_x=1
-    #v_moyint=[v_moy_x,0,0]
-    #v_tilde=B_px*v_moy_x
-    #v_tot=v_tilde+Constant((v_moyint[0],v_moyint[1],v_moyint[2]))     
-    #C_drag=(2*Radius**2)/(9*(1-Epsi))*(1/Kx) #coefficient de trainée utilisé par Morgan pour cas test
-    #abscisse_SU=((1-Epsi)**(1/3))/Epsi #abscisse utilisée par Morgan pour cas test  
-    # L_t.append(time.time())
-    # print('Temps FEniCS varglob : '+str(L_t[-1]-L_t[-2])+'s')
-    L_t.append(time.time())
-    print('Temps FEniCS_perm total : '+str(L_t[-1]-L_t[0])+'s')  
-    return (V_alpha, Kx,K_star,nano_perm_adimmicro) #ICI Kx représente K effectif, K_star représente la contribution de l'échelle considérée
-
-
-
 def OLI16_volume_2D(file_name):
     L_t=[time.time()]
     mesh,ds,dx, boundaries, subdomains=OLI16_importation_mesh_2D(file_name)
-    pbc = OLI16_PeriodicBC2()   #fonction d'appairage des bords périodiques sur FEniCS
+    pbc = OLI16_PeriodicBC2()   #matching periodic boundaries on FEniCS
     P1,R,V,n,V_alpha,e_vectors,u_tuple=OLI16_initialisation_fenics_2D(mesh,dx,pbc)
-    Resultat=V_alpha #porosité, puis autres résultats      
+    Resultat=V_alpha #porosity, then other results    
     L_t.append(time.time())
     #print('Temps FEniCS total : '+str(L_t[-1]-L_t[0])+'s')
     return Resultat
     
-def OLI18_solver_diff_2D(file_name): #routine d'appel à FEniCS pour résolution du problème FEM
+def OLI18_solver_diff_2D(file_name): #resolution using finite elements method
     L_t=[time.time()]
     mesh,ds,dx, boundaries, subdomains=OLI16_importation_mesh_2D(file_name)
-    pbc = OLI16_PeriodicBC2()   #fonction d'appairage des bords périodiques sur FEniCS
+    pbc = OLI16_PeriodicBC2()   #periodic boundary matching 
     P1,R,V,n,V_alpha,e_vectors,u_tuple=OLI16_initialisation_fenics_2D(mesh,dx,pbc)
-    Resultat=[V_alpha] #porosité, puis autres résultats
+    Resultat=[V_alpha] #porosity, then other results  
 
     "========================================================"
-    "ELEMENTS FINIS"
+    "FINITE ELEMENTS"
     
-    for i_dir in range(2): #calcul selon les 3 directions pour avoir Dxx Dyy et Dzz   
+    for i_dir in range(2): #computation along the three directions to get Dxx Dyy and Dzz   
         e_x=e_vectors[i_dir]
  
         # Define variational problem
-        (u, c) = TrialFunction(V) #solution cherchées : u est la sol, c la constante
-        (v, d) = TestFunction(V) #fonctions test
-        a = (dot(grad(u), grad(v))+ c*v + u*d)*dx #forme bilinéaire
-        L = -dot(e_x,n)*v*(ds(3)+ds(4))  #f*v*dx-g*dot(e_x,n)*v*ds #forme linéaire. Contient la condition de neumann aux abords des obstacles
+        (u, c) = TrialFunction(V) 
+        (v, d) = TestFunction(V) 
+        a = (dot(grad(u), grad(v))+ c*v + u*d)*dx #bilinear form
+        L = -dot(e_x,n)*v*(ds(3)+ds(4))  #f*v*dx-g*dot(e_x,n)*v*ds #linear form, contains Neumann boundary condition on obstacles surfaces
     
         "========================================================"
         "SOLVER"
     
-        w = Function(V) #on définit une nouvelle fonction qui sera la solution
-        solve(a == L, w,solver_parameters={'linear_solver': 'gmres'}) #UTILISATION GMRES OPTIMALE, precondtionner non réglé
-        (u, c) = w.split() #séparation u et constante c
+        w = Function(V) #solution definition
+        solve(a == L, w,solver_parameters={'linear_solver': 'gmres'}) #USE OF GMRES
+        (u, c) = w.split() #separating solution u and constant c
     
         "========================================================"
-        "CALCUL VARIABLES GLOBALES"
+        "COMPUTING GLOBAL VARIABLES"
 
-        dxx = assemble(dot(e_x, n)*u*(ds(3)+ds(4))) #on intègre bx sur cette surface
-        Dxx_ad=1+(1/V_alpha)*dxx #on obtient la compo Dxx du tenseur
-        epsi_Dad=V_alpha*Dxx_ad #on obtient la grandeur qu'on plot habituellement        
-        Resultat.append(epsi_Dad) #ajout du résultat 
-        u_tuple=u_tuple+(u,) #sauvegarde du champ solution
+        dxx = assemble(dot(e_x, n)*u*(ds(3)+ds(4))) #integration of bx on this surface
+        Dxx_ad=1+(1/V_alpha)*dxx #we get Dxx 
+        epsi_Dad=V_alpha*Dxx_ad      
+        Resultat.append(epsi_Dad) 
+        u_tuple=u_tuple+(u,) 
         
     L_t.append(time.time())
     print('Temps FEniCS_diff total : '+str(L_t[-1]-L_t[0])+'s')
     return (Resultat,)+u_tuple
 
-def OLI16_solver_probA2_2D(A,k2,Da,file_name): #routine d'appel à FEniCS pour résolution du problème FEM
-    L_t=[time.time()]
-    mesh,ds,dx, boundaries, subdomains=OLI16_importation_mesh_2D(file_name)
-    pbc = OLI16_PeriodicBC2()   #fonction d'appairage des bords périodiques sur FEniCS
-    P1,R,V,n,V_alpha,e_vectors,u_tuple=OLI16_initialisation_fenics_2D(mesh,dx,pbc)
-    Resultat=[V_alpha] #porosité, puis autres résultats
-
-    "========================================================"
-    "ELEMENTS FINIS"
-    
-    for i_dir in range(1): #calcul selon les 3 directions pour avoir Dxx Dyy et Dzz    
-        # Define variational problem
-        (u, c) = TrialFunction(V) #solution cherchées : u est la sol, c la constante
-        (v, d) = TestFunction(V) #fonctions test
-        a = (dot(grad(u), grad(v))+ c*v + u*d)*dx #forme bilinéaire
-        L = -(k2/Da)*A*v*dx-(k2/Da)*v*ds(4) #forme linéaire. Contient la condition de neumann aux abords des obstacles
-      
-        "========================================================"
-        "SOLVER"
-    
-        w = Function(V) #on définit une nouvelle fonction qui sera la solution
-        solve(a == L, w,solver_parameters={'linear_solver': 'gmres'}) #UTILISATION GMRES OPTIMALE, precondtionner non réglé
-        (u, c) = w.split() #séparation u et constante c
-    
-        "========================================================"
-        "CALCUL VARIABLES GLOBALES"
-        
-    for i_dir in range(2): #calcul selon les 3 directions pour avoir Dxx Dyy et Dzz   
-        e_x=e_vectors[i_dir]
-        u_ab_x=assemble(dot(e_x,n)*u*(ds(3)+ds(4)))
-        Resultat.append(u_ab_x)     
-    u_tuple=u_tuple+(u,) #sauvegarde du champ solution
-        
-    L_t.append(time.time())
-    #print('Temps FEniCS total : '+str(L_t[-1]-L_t[0])+'s')
-    return (Resultat,)+u_tuple
-
-
-def OLI16_solver_probB2_2D(k3,Db,u_A1_x,u_A1_y,file_name): #routine d'appel à FEniCS pour résolution du problème FEM
-    L_t=[time.time()]
-    mesh,ds,dx, boundaries, subdomains=OLI16_importation_mesh_2D(file_name)
-    pbc = OLI16_PeriodicBC2()   #fonction d'appairage des bords périodiques sur FEniCS
-    P1,R,V,n,V_alpha,e_vectors,u_tuple=OLI16_initialisation_fenics_2D(mesh,dx,pbc)
-    Resultat=[V_alpha] #porosité, puis autres résultats
-    P1_sp=FunctionSpace(mesh, P1,constrained_domain=pbc)
-    u_A1=(u_A1_x,u_A1_y)
-
-    "========================================================"
-    "ELEMENTS FINIS"
-    
-    for i_dir in range(2): #calcul selon les 3 directions pour avoir Dxx Dyy et Dzz   
-        e_x=e_vectors[i_dir]
-        w=u_A1[i_dir]
-        W=Function(P1_sp) #W est une projection de w sur l'espace des fonctions V 
-        W=project(w,P1_sp)
- 
-        # Define variational problem
-        (u, c) = TrialFunction(V) #solution cherchées : u est la sol, c la constante
-        (v, d) = TestFunction(V) #fonctions test
-        a = (dot(grad(u), grad(v))+ c*v + u*d)*dx #forme bilinéaire
-        L = (k3/Db)*W*v*dx #forme linéaire. Contient la condition de neumann aux abords des obstacles    
-        "========================================================"
-        "SOLVER"
-    
-        w = Function(V) #on définit une nouvelle fonction qui sera la solution
-        solve(a == L, w,solver_parameters={'linear_solver': 'gmres'}) #UTILISATION GMRES OPTIMALE, precondtionner non réglé
-        (u, c) = w.split() #séparation u et constante c
-    
-        "========================================================"
-        "CALCUL VARIABLES GLOBALES"
-   
-        Dad = (1/V_alpha)*assemble(dot(e_x, n)*u*(ds(3)+ds(4))) #on intègre bx sur cette surface
-        epsi_Dad=V_alpha*Dad #on obtient la grandeur qu'on plot habituellement
-        
-        Resultat.append(epsi_Dad) #ajout du résultat
-        u_tuple=u_tuple+(u,) #sauvegarde du champ solution
-        
-    L_t.append(time.time())
-    #print('Temps FEniCS total : '+str(L_t[-1]-L_t[0])+'s')
-    return (Resultat,)+u_tuple
-
-
-def OLI16_solver_probB3_2D(k3,Db,u_A2,file_name): #routine d'appel à FEniCS pour résolution du problème FEM   
-    L_t=[time.time()]
-    mesh,ds,dx, boundaries, subdomains=OLI16_importation_mesh_2D(file_name)
-    pbc = OLI16_PeriodicBC2()   #fonction d'appairage des bords périodiques sur FEniCS
-    P1,R,V,n,V_alpha,e_vectors,u_tuple=OLI16_initialisation_fenics_2D(mesh,dx,pbc)
-    P1_sp=FunctionSpace(mesh, P1,constrained_domain=pbc)
-    Resultat=[V_alpha] #porosité, puis autres résultats
-
-    "========================================================"
-    "ELEMENTS FINIS"
-    
-    for i_dir in range(1): #calcul selon les 3 directions pour avoir Dxx Dyy et Dzz   
-        w=u_A2
-        W=Function(P1_sp) #W est une projection de w sur l'espace des fonctions V 
-        W=project(w,P1_sp)
- 
-        # Define variational problem
-        (u, c) = TrialFunction(V) #solution cherchées : u est la sol, c la constante
-        (v, d) = TestFunction(V) #fonctions test
-        a = (dot(grad(u), grad(v))+ c*v + u*d)*dx #forme bilinéaire
-        L = (k3/Db)*W*v*dx #forme linéaire. Contient la condition de neumann aux abords des obstacles
-    
-        "========================================================"
-        "SOLVER"
-    
-        w = Function(V) #on définit une nouvelle fonction qui sera la solution
-        solve(a == L, w,solver_parameters={'linear_solver': 'gmres'}) #UTILISATION GMRES OPTIMALE, precondtionner non réglé
-        (u, c) = w.split() #séparation u et constante c
-    
-        "========================================================"
-        "CALCUL VARIABLES GLOBALES"
-
-    for i_dir in range(2): #calcul selon les 3 directions pour avoir Dxx Dyy et Dzz   
-        e_x=e_vectors[i_dir]
-        u_ba_x=assemble(dot(e_x,n)*u*(ds(3)+ds(4)))        
-        Resultat.append(u_ba_x) #ajout du résultat 
-    u_tuple=u_tuple+(u,) #sauvegarde du champ solution
-        
-    L_t.append(time.time())
-    #print('Temps FEniCS total : '+str(L_t[-1]-L_t[0])+'s')
-    return (Resultat,)+u_tuple
 
 
 "========================================================"
-"FONCTIONS SECONDAIRES (NE PAS MODIFIER EN PRINCIPE)"
+"SECONDARY FUNCTIONS"
 "========================================================"
 
 def OLI16_conversion_maillage_2D(file_name):
@@ -547,19 +332,19 @@ def OLI16_conversion_maillage_2D(file_name):
 def OLI16_importation_mesh_2D(file_name):
     mesh=Mesh() #définition du mesh
     
-    mvc = MeshValueCollection("size_t", mesh, mesh.topology().dim()) #récupération éléments triangles (surfaces)
+    mvc = MeshValueCollection("size_t", mesh, mesh.topology().dim()) #recovering triangle elements (surfaces)
     with XDMFFile(file_name+"_mesh.xdmf") as infile:
        infile.read(mesh)
        infile.read(mvc, "name_to_read")
     cf = cpp.mesh.MeshFunctionSizet(mesh, mvc)
 
-    mvc = MeshValueCollection("size_t", mesh, mesh.topology().dim()-1) #récupération éléments segments (bordures)
+    mvc = MeshValueCollection("size_t", mesh, mesh.topology().dim()-1) #recovery line elements 
     with XDMFFile(file_name+"_mf.xdmf") as infile:
         infile.read(mvc, "name_to_read")   
     mf = cpp.mesh.MeshFunctionSizet(mesh, mvc) 
     
-    ds = Measure("ds", domain=mesh, subdomain_data=mf) #définition intégrande bordure
-    dx = Measure("dx", domain=mesh, subdomain_data=cf) #définition intégrande surface   
+    ds = Measure("ds", domain=mesh, subdomain_data=mf) #integration on lines
+    dx = Measure("dx", domain=mesh, subdomain_data=cf) #integration on surfaces
     
     #mesh = Mesh("yourmeshfile.xml")
     # subdomains = MeshFunction("size_t", mesh, cf)
@@ -576,20 +361,19 @@ def OLI16_importation_mesh_2D(file_name):
 
 
 def OLI16_initialisation_fenics_2D(mesh,dx,pbc):
-    set_log_level(40) #FENICS N'affiche que les erreurs en principe, en pratique il affiche trop    
-    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1) #utilisation d'éléments mixtes car résolution avec conditions de Neumann pures
-    #(la solution est donc défninie à une constante près)
+    set_log_level(40)  
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1) #mixed finite elements
     R = FiniteElement("Real", mesh.ufl_cell(), 0)
     V = FunctionSpace(mesh, P1 * R,constrained_domain=pbc)
-    n=FacetNormal(mesh) #structure un peu bizzare qui contient la normale ext aux parois du domaine
-    V_alpha=assemble(Constant(1.0)*dx) #on intègre l'espace pour obtenir la porosité                
+    n=FacetNormal(mesh) 
+    V_alpha=assemble(Constant(1.0)*dx) #porosity computation             
     e_vectors=(Constant((1,0)),Constant((0,1))) 
     u_tuple=()
     
     return P1,R,V,n,V_alpha,e_vectors,u_tuple
 
 
-class OLI16_PeriodicBC2(SubDomain): #Fonction interne FEniCS d'appairage des bords périodiques
+class OLI16_PeriodicBC2(SubDomain): #function FEniCS for matching of periodic boundaries
     def inside(self, x, on_boundary):
     # return True if on left or bottom boundary AND NOT on one of the two slave edges
         return bool((near(x[0], 0) or near(x[1],0)) and 
@@ -629,9 +413,9 @@ def Recherche_bords(eps):
     return L_bordcarre
 
 def Set_periodic_boundaries(eps):
-    #Avec Gmsh on peut forcer le maillage à être périodique (cad les éléments se correspondent 1 à 1 sur les bords)  
-    #matrice des transformations affines pour lier les bords périodiques entre eux
-    #selon x
+    #gmsh can be used to force the mesh to be periodic, which is a requirement for FEniCS periodic boundary application
+    #affine transform matrix
+    # x axis
     for i_dir in range(2):
         if i_dir==0:
             d=[1,0]
@@ -660,7 +444,7 @@ def Set_periodic_boundaries(eps):
                         and abs(ymin2 - ymin) < eps and abs(ymax2 - ymax) < eps
                         and abs(zmin2 - zmin) < eps and abs(zmax2 - zmax) < eps):
                     gmsh.model.mesh.setPeriodic(2, [j[1]], [i[1]], translation)
-        gmsh.model.occ.synchronize() #maj geometrie
+        gmsh.model.occ.synchronize() #update
 
 
 
@@ -673,23 +457,22 @@ def Set_periodic_boundaries(eps):
 "========================================================"
 
 "========================================================"
-"FONCTIONS PRINCIPALES (A MODIFIER SELON CONFIGURATION)"
+"PRINCIPAL FUNCTIONS"
 "========================================================"
 
-def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obstacles,file_name,MATRICE_OBSTACLES=np.zeros((0)),show_geometry=0): #routine d'appel à gmsh pour génération du maillage
-    #Radius : rayon de l'obstacle (sphère ou cylindre)
-    #Radius_impenetrable : rayon de l'obstacle (sans intersection), utilisé dans les géoms aléatoires
-    #Length : longueur (prise en compte seulement pour cylindre)
-    #Mesh_size : taille caract du maillage
-    #geom : type de géométrie utilisée
-    #N_obstacles : nombre d'obstacles
-    #file_name : nom pour l'enregistrement des fichiers 
-    #MATRICE_OBSTACLES : coordonnées des obstacles, utile uniquement en géométrie aléatoire pour reprendre une config existante
+def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obstacles,file_name,MATRICE_OBSTACLES=np.zeros((0)),show_geometry=0): #mesh generation
+    #Radius : obstacle radius
+    #Radius_impenetrable : radius obstacle to define its subdomain which cannot be intersected by other obstacles
+    #Length : obstacle length (only for cylinder)
+    #Mesh_size : mesh typical size
+    #N_obstacles : number of obstacles
+    #file_name : name for file saving
+    #MATRICE_OBSTACLES : obstacles coordinates, only useful for random geometries when reusing a previously defined configuration
 
     L_t=[time.time()]   
     gmsh.initialize()  
     gmsh.option.setNumber('General.Verbosity', 3)
-    gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1) #pourquoi?
+    gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1) 
     gmsh.option.setNumber("Geometry.Tolerance", 2e-8)
     
     
@@ -698,12 +481,10 @@ def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obs
     refine_obstacle=1
     
     "========================================================"
-    "DEFINITION GEOMETRIE"
+    "GEOMETRY DEFINITION
     
-    if geom==0: #Obstacle Sphère 3D
-        #On peut faire 1 sphère entière (si ça ne dépasse pas du cube)
-        #Sinon il faut faire deux demi sphères (marche dans tous les cas)
-        gmsh.model.occ.addBox(0, 0, 0, 1, 1, 1, 10) #domaine cube "10"
+    if geom==0: #Centered spheric obstacle periodic
+        gmsh.model.occ.addBox(0, 0, 0, 1, 1, 1, 10) #domain cube "10"
         gmsh.model.occ.addSphere(0.5, 0.5, 0.5, Radius, 11, angle3=math.pi) #sphere "11" (obstacle)
         c = gmsh.model.occ.copy([(3, 11)])
         gmsh.model.occ.rotate(c, 0.5, 0.5, 0.5, 0, 0, 1, math.pi)
@@ -717,11 +498,11 @@ def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obs
             L_obstacle=[6,7]
         if Radius==0.5:
             return "erreur R=0.5"      
-        gmsh.model.occ.synchronize() #maj geometrie pour synchro MODEL avec OCC
+        gmsh.model.occ.synchronize() #update
         
         
-    elif geom==0.2: #cubique à faces centrées
-        gmsh.model.occ.addBox(0, 0, 0, 1, 1, 1, 10) #domaine cube "10"
+    elif geom==0.2: #3D cubic face centered periodic
+        gmsh.model.occ.addBox(0, 0, 0, 1, 1, 1, 10) #domain cube "10"
         
         k_obstacle=0
         for i_x in range(2):
@@ -742,7 +523,7 @@ def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obs
             
         for i_k_obstacle in range(k_obstacle):
             gmsh.model.occ.cut([(3, 10)], [(3,11+i_k_obstacle)]) #difference cube "10" - 2 half spheres
-        gmsh.model.occ.synchronize() #maj geometrie pour synchro MODEL avec OCC       
+        gmsh.model.occ.synchronize() #update     
         if Radius<np.sqrt(2)/4:
             L_volume=[10] 
             L_bordcarre=[1,2,5,6,9,13]
@@ -751,93 +532,90 @@ def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obs
             L_volume=[10] 
             L_bordcarre=[1,2,7,9,10,11,14,15,16,17,19,22,24,27,29,31,32,33,34,35,36,37,38,39]
             L_obstacle=[3, 4, 5, 6, 8, 12, 13, 18, 20, 21, 23, 25, 26, 28, 30]
-            #print('Intersection des sphères non implémenté')
+            #print('Sphere interseciton not implemented')
             
-    #=============================SPHERES INTERSECTIONS PARTIELLES====================================
-    elif geom==1: #spheres aléatoires, intersection partielle
-        gmsh.model.occ.addBox(0, 0, 0, 1, 1, 1, 10) #domaine cube "10"
+    #=============================SPHERES PARTIAL INTERSECTIONS====================================
+    elif geom==1: #spheres randomly placed with only partial intersection allowed
+        gmsh.model.occ.addBox(0, 0, 0, 1, 1, 1, 10) #domain cube "10"
         
-        if MATRICE_OBSTACLES.size==0: #= aucune matrice obstacle n'a été fournie
+        if MATRICE_OBSTACLES.size==0: #= no matrice obstacle provided
             print('CREATION NOUVELLE GEOMETRIE')
-            iteration_max=1000 #itération max pour le placement du k-ième obstacle respectant les intersections partielles
-            k=0 #nombre d'obstacles placés (*27) 
-            L_x,L_y,L_z=[],[],[] #liste de récupération des coordonnées des obstacles placés     
+            iteration_max=1000 
+            k=0 #number of placed obstacles (*27) 
+            L_x,L_y,L_z=[],[],[] #placed obstacles coordinates    
             for i_fibre in range(N_obstacles):
-                flag_validationencours=1 #la tentative de placement du nouvel obstacle n'est pas encore validée
+                flag_validationencours=1 #new obstacle placement not validated yet
                 iteration=0             
-                while flag_validationencours and iteration<iteration_max : #BLOC DE RECHERCHE DE POSITION RESPECTANT LE CRITERE D'INTERSECTION PARTIELLE
-                    [xa_1,ya_1,za_1]=[random.random(),random.random(),random.random()] #position aléatoire
+                while flag_validationencours and iteration<iteration_max : #looking for valid positions
+                    [xa_1,ya_1,za_1]=[random.random(),random.random(),random.random()]
                     flag_colision=0 #pas encore de colision entre obstacles
-                    i=0 #vérification de la non-colision entre le nouvel obstacle et le i-ième obstacle                
-                    while i<len(L_x) and flag_colision==0: #on étudie chaque obstacle tant qu'on les a pas tous fait et qu'on a pas de colision
-                        d=np.sqrt((xa_1-L_x[i])**2+(ya_1-L_y[i])**2+(za_1-L_z[i])**2) #distance entre les centres spheres
+                    i=0 #verification of the criterion               
+                    while i<len(L_x) and flag_colision==0: 
+                        d=np.sqrt((xa_1-L_x[i])**2+(ya_1-L_y[i])**2+(za_1-L_z[i])**2) 
                         if d<2*Radius_impenetrable:
-                            flag_colision=1 #on a colision
+                            flag_colision=1 #colision!
                         i+=1                 
                     if i==len(L_x) and flag_colision==0:
-                        flag_validationencours=0 #on a vérifié tous les obstacles donc c'est bon!
+                        flag_validationencours=0 #placement is validated
                     iteration+=1
-                    if iteration==iteration_max: #si impossible de placer les obstacles : le programme abandonne
-                        print("ECHEC POSITIONNEMENT OBSTACLE N°"+str(i_fibre))
-                        return #sort de la fonction
+                    if iteration==iteration_max: #impossible to place a new obstacle
+                        print("FAILURE OBSTACLE POSITIONING N°"+str(i_fibre))
+                        return 
                  
-                #POSITIONNEMENT DES *27 obstacles (après validation)
+                #COPYING 27 TIMES THE OBSTACLE FOR PERIODICITY 
                 for d_x in range(-1,2):
                     for d_y in range(-1,2):
                         for d_z in range(-1,2):     
-                            #definition critere : si la sphere est trop loin du pt (0.5,0.5,0.5) alors ca ne sert à rien de l'ajouter
-                            L_cube=1 #taille du cube
-                            [x_cube,y_cube,z_cube]=[0.5,0.5,0.5] #position du centre du cube
-                            #critère nécessaire pour qu'une sphère intersecte le cube
+                            L_cube=1 
+                            [x_cube,y_cube,z_cube]=[0.5,0.5,0.5] 
                             Critere_cube=abs(xa_1+d_x-x_cube)<(L_cube/2+Radius) and abs(ya_1+d_y-y_cube)<(L_cube/2+Radius) and abs(za_1+d_z-z_cube)<(L_cube/2+Radius)
                             if Critere_cube:
-                                gmsh.model.occ.addSphere(xa_1+d_x, ya_1+d_y, za_1+d_z, Radius, 1000+k)#on ajoute la sphère
-                                L_x.append(xa_1+d_x) #récupération des coordonnées
+                                gmsh.model.occ.addSphere(xa_1+d_x, ya_1+d_y, za_1+d_z, Radius, 1000+k)
+                                L_x.append(xa_1+d_x) #coordinates saving
                                 L_y.append(ya_1+d_y)
                                 L_z.append(za_1+d_z)
                                 k+=1
-            MATRICE_OBSTACLES=np.zeros((len(L_x),3)) #récupération des coordonnées
-            MATRICE_OBSTACLES[:,:]=np.transpose([L_x,L_y,L_z]) #plus simple pour réutiliser les coordonnées
+            MATRICE_OBSTACLES=np.zeros((len(L_x),3)) 
+            MATRICE_OBSTACLES[:,:]=np.transpose([L_x,L_y,L_z]) 
         
-        else : #SI UNE MATRICE OBSTACLE A ETE FOURNIE
-            print('UTILISATION GEOMETRIE EXISTANTE')
-            N_obstacles_repetes=MATRICE_OBSTACLES.shape[0] #nombre d'obstacles (*27) à placer
+        else : #IF A MATRICE OBSTACLES IS PROVIDED, WE REUSE IT
+            N_obstacles_repetes=MATRICE_OBSTACLES.shape[0] 
             for k in range(N_obstacles_repetes):
-                [x,y,z]=MATRICE_OBSTACLES[k,:] #récupération des coordonnées
+                [x,y,z]=MATRICE_OBSTACLES[k,:] 
                 gmsh.model.occ.addSphere(x, y, z, Radius, 1000+k)                 
-        gmsh.model.occ.synchronize() #maj geometrie        
+        gmsh.model.occ.synchronize() #update      
     
-    #=============================CYLINDRES INTERSECTIONS PARTIELLES====================================
+    #=============================CYLINDERS WITH PARTIAL INTERSECTION====================================
     elif geom==2: #
-        gmsh.model.occ.addBox(0, 0, 0, 1, 1, 1, 10) #domaine cube "10"
+        gmsh.model.occ.addBox(0, 0, 0, 1, 1, 1, 10) #domain cube "10"
         
-        if MATRICE_OBSTACLES.size==0: #PAS DE MATRICE OBSTACLE FOURNIE
-            print('CREATION NOUVELLE GEOMETRIE')
+        if MATRICE_OBSTACLES.size==0: #no MATRICE_OBSTACLES provided
+            print('NEW GEOMETRY CREATION')
             iteration_max=10000
             k=0
             L_xa,L_ya,L_za,L_xb,L_yb,L_zb=[],[],[],[],[],[]            
-            Radius_eq=np.sqrt(Radius**2+(Length/2)**2) #rayon de la sphère de colision associée au cylindre
+            Radius_eq=np.sqrt(Radius**2+(Length/2)**2) 
             for i_fibre in range(N_obstacles):  
                 flag_validationencours=1
                 iteration=0              
                 while flag_validationencours and iteration<iteration_max :
                     #POINT : CENTRE BASE DU CYLINDRE
-                    [xa,ya,za]=[random.random(),random.random(),random.random()]  #définition du premier point : centre de la base du cylindre
-                    #VECTEUR : axe de revolution cylindre
+                    [xa,ya,za]=[random.random(),random.random(),random.random()]  #first point definition: center of base of the cylinder
+                    #vector: cylinder central axis
                     [xb,yb,zb]=[random.uniform(-1,2),random.uniform(-1,2),random.uniform(-1,2)]
                     #print('xb,yb,zb='+str([xb,yb,zb]))
-                    n_l2=np.sqrt(xb**2+yb**2+zb**2) #calcul norme du vecteur ALEATOIRE
-                    [xb,yb,zb]=(Length/n_l2)*np.array([xb,yb,zb]) #CORRECTION NORME VECTEUR=Length
+                    n_l2=np.sqrt(xb**2+yb**2+zb**2) #norm of the random vector
+                    [xb,yb,zb]=(Length/n_l2)*np.array([xb,yb,zb]) #normalization of the size of the random vector
                                 
                     flag_colision=0
                     i=0
                     while i<len(L_xa) and flag_colision==0:
-                        p1=np.array([xa,ya,za]) #début 1er segment
-                        p2=p1+np.array([xb,yb,zb]) #fin 1er segment (fin de l'axe du cylindre)
-                        p3=np.array([L_xa[i],L_ya[i],L_za[i]]) #début 2ème segment
-                        p4=p3+np.array([L_xb[i],L_yb[i],L_zb[i]])   #fin 2ème segment (fin de l'axe du cylindre)
+                        p1=np.array([xa,ya,za]) 
+                        p2=p1+np.array([xb,yb,zb]) 
+                        p3=np.array([L_xa[i],L_ya[i],L_za[i]]) 
+                        p4=p3+np.array([L_xb[i],L_yb[i],L_zb[i]])   
                         
-                        d=closest_line_seg_line_seg(p1, p2, p3, p4) #calcul distance minimale entre les deux cylindres
+                        d=closest_line_seg_line_seg(p1, p2, p3, p4) #computation of the distance between the two cylinders to see if intersection criterion is respected
 
                         if d<2*Radius_impenetrable:
                             flag_colision=1
@@ -849,41 +627,40 @@ def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obs
                         #print("success obstacle N°"+str(i_fibre))
                     iteration+=1
                     if iteration==iteration_max:
-                        print("ECHEC POSITIONNEMENT OBSTACLE N°")  
+                        print("FAILURE POSITIONNING OBSTACLE N°")  
                         return
                 
-                #AJOUT DE l'obstacle (après validation)
-                [xc,yc,zc]=np.array([xa,ya,za])+np.array([xb,yb,zb])/2#centre du cylindre normé             
-                for d_x in range(-1,2): #selon chaque axe : on ajoute 27 fois l'obstacle
+                #adding the validated obstacle
+                [xc,yc,zc]=np.array([xa,ya,za])+np.array([xb,yb,zb])/2           
+                for d_x in range(-1,2): 
                     for d_y in range(-1,2):
                         for d_z in range(-1,2):     
                             L_cube=1
                             [x_cube,y_cube,z_cube]=[0.5,0.5,0.5]
-                            #si critere cube valide, l'obstacles a de fortes chances de toucher le cube
-                            "Radius_eq*=2 pour fiabiliser "
+                            "Radius_eq*=2 is used to increase program robustness "
                             Radius_eq*=2
                             Critere_cube=abs(xc+d_x-x_cube)<(L_cube/2+Radius_eq) and abs(yc+d_y-y_cube)<(L_cube/2+Radius_eq) and abs(zc+d_z-z_cube)<(L_cube/2+Radius_eq)
-                            if Critere_cube : #la sphère de colision est susceptible d'intersecter le cube unité            
-                                gmsh.model.occ.addCylinder(xa+d_x, ya+d_y, za+d_z, xb, yb, zb, Radius, 1000+k) #donc on ajoute l'obstacle
+                            if Critere_cube :            
+                                gmsh.model.occ.addCylinder(xa+d_x, ya+d_y, za+d_z, xb, yb, zb, Radius, 1000+k)
                                 L_xa.append(xa+d_x)
                                 L_ya.append(ya+d_y)
                                 L_za.append(za+d_z)
                                 L_xb.append(xb)
                                 L_yb.append(yb)
                                 L_zb.append(zb)                              
-                                k+=1 #compte le nombre d'obstacle effectivement ajoutés 
+                                k+=1 #number of added obstacles
             MATRICE_OBSTACLES=np.zeros((k,6))
             MATRICE_OBSTACLES[:,:]=np.transpose([L_xa,L_ya,L_za,L_xb,L_yb,L_zb])
                
-        else : #UNE MATRICE OBSTACLE A ETE FOURNIE
-            print('UTILISATION GEOMETRIE EXISTANTE')
+        else : #MATRICE_OBSTACLES was provided
+            print('reusing existing geometry')
             N_obstacles_repetes=MATRICE_OBSTACLES.shape[0]
             for k in range (N_obstacles_repetes):
                 [xa,ya,za,xb,yb,zb]=MATRICE_OBSTACLES[k,:]
-                gmsh.model.occ.addCylinder(xa, ya, za, xb, yb, zb, Radius, 1000+k) #donc on ajoute l'obstacle                                   
-        gmsh.model.occ.synchronize() #maj geometrie pour synchro MODEL avec OCC  
+                gmsh.model.occ.addCylinder(xa, ya, za, xb, yb, zb, Radius, 1000+k)                                   
+        gmsh.model.occ.synchronize() #update
         
-    #============================= CYLINDRES + SPHERES : Factin + Ribosomes ====================================
+    #============================= CYLINDERS + SPHERES : Factin + Ribosomes ====================================
     elif geom==3: #
         N_act=N_obstacles[0] ; N_rib=N_obstacles[1]
         Radius_act=Radius[0] ; Radius_rib=Radius[1]
@@ -893,80 +670,75 @@ def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obs
     
         gmsh.model.occ.addBox(0, 0, 0, 1, 1, 1, 10) #domaine cube "10"
         
-        if len(MATRICE_OBSTACLES)==0: #PAS DE MATRICE OBSTACLE FOURNIE
+        if len(MATRICE_OBSTACLES)==0: 
             
-            '====Positionnement des SPHERES===='
-            print('CREATION NOUVELLE GEOMETRIE')
-            iteration_max=1000 #itération max pour le placement du k-ième obstacle respectant les intersections partielles
+            '====Placing the spheres===='
+            print('new geom creation')
+            iteration_max=1000 
             k=0 #nombre d'obstacles placés (*27) 
-            L_x,L_y,L_z=[],[],[] #liste de récupération des coordonnées des obstacles placés     
+            L_x,L_y,L_z=[],[],[]   
             for i_fibre in range(N_rib):
-                flag_validationencours=1 #la tentative de placement du nouvel obstacle n'est pas encore validée
+                flag_validationencours=1 
                 iteration=0             
-                while flag_validationencours and iteration<iteration_max : #BLOC DE RECHERCHE DE POSITION RESPECTANT LE CRITERE D'INTERSECTION PARTIELLE
-                    [xa_1,ya_1,za_1]=[random.random(),random.random(),random.random()] #position aléatoire
-                    flag_colision=0 #pas encore de colision entre obstacles
-                    i=0 #vérification de la non-colision entre le nouvel obstacle et le i-ième obstacle                
-                    while i<len(L_x) and flag_colision==0: #on étudie chaque obstacle tant qu'on les a pas tous fait et qu'on a pas de colision
-                        d=np.sqrt((xa_1-L_x[i])**2+(ya_1-L_y[i])**2+(za_1-L_z[i])**2) #distance entre les centres spheres
+                while flag_validationencours and iteration<iteration_max : 
+                    [xa_1,ya_1,za_1]=[random.random(),random.random(),random.random()] 
+                    flag_colision=0 
+                    i=0                
+                    while i<len(L_x) and flag_colision==0: 
+                        d=np.sqrt((xa_1-L_x[i])**2+(ya_1-L_y[i])**2+(za_1-L_z[i])**2) 
                         if d<2*Radius_impenetrable_rib:
                             flag_colision=1 #on a colision
                         i+=1                 
                     if i==len(L_x) and flag_colision==0:
-                        flag_validationencours=0 #on a vérifié tous les obstacles donc c'est bon!
+                        flag_validationencours=0 
                     iteration+=1
-                    if iteration==iteration_max: #si impossible de placer les obstacles : le programme abandonne
-                        print("ECHEC POSITIONNEMENT OBSTACLE N°"+str(i_fibre))
-                        return #sort de la fonction
+                    if iteration==iteration_max: 
+                        print("FAILURE POSITIONNING OBSTACLE N°"+str(i_fibre))
+                        return
                  
-                #POSITIONNEMENT DES *27 obstacles (après validation)
+                #POSITIONNING OF THE 27* OBSTACLES
                 for d_x in range(-1,2):
                     for d_y in range(-1,2):
                         for d_z in range(-1,2):     
-                            #definition critere : si la sphere est trop loin du pt (0.5,0.5,0.5) alors ca ne sert à rien de l'ajouter
-                            L_cube=1 #taille du cube
-                            [x_cube,y_cube,z_cube]=[0.5,0.5,0.5] #position du centre du cube
-                            #critère nécessaire pour qu'une sphère intersecte le cube
-                            "mod 2x radius pour générer des trucs qui marchent même avec un rayon plus gros"
+                            L_cube=1 
+                            [x_cube,y_cube,z_cube]=[0.5,0.5,0.5] 
                             Radius_eq=Radius_rib
                             Radius_eq*=2
                             "==============="
                             Critere_cube=abs(xa_1+d_x-x_cube)<(L_cube/2+Radius_eq) and abs(ya_1+d_y-y_cube)<(L_cube/2+Radius_eq) and abs(za_1+d_z-z_cube)<(L_cube/2+Radius_eq)
                             if Critere_cube:
-                                gmsh.model.occ.addSphere(xa_1+d_x, ya_1+d_y, za_1+d_z, Radius_rib, 1000+k)#on ajoute la sphère
-                                L_x.append(xa_1+d_x) #récupération des coordonnées
+                                gmsh.model.occ.addSphere(xa_1+d_x, ya_1+d_y, za_1+d_z, Radius_rib, 1000+k)
+                                L_x.append(xa_1+d_x) 
                                 L_y.append(ya_1+d_y)
                                 L_z.append(za_1+d_z)
                                 k+=1   
-                MATRICE_OBSTACLES_spheres=np.zeros((len(L_x),3)) #récupération des coordonnées
-                MATRICE_OBSTACLES_spheres[:,:]=np.transpose([L_x,L_y,L_z]) #plus simple pour réutiliser les coordonnées
+                MATRICE_OBSTACLES_spheres=np.zeros((len(L_x),3)) 
+                MATRICE_OBSTACLES_spheres[:,:]=np.transpose([L_x,L_y,L_z]) 
         
-            '====Positionnement des CYLINDRES===='
+            '====CYLINDERS PLACEMENT===='
             iteration_max=10000
             #k=0
             L_xa,L_ya,L_za,L_xb,L_yb,L_zb=[],[],[],[],[],[]       
-            Radius_eq=np.sqrt(Radius_act**2+(Length/2)**2) #rayon de la sphère de colision associée au cylindre
+            Radius_eq=np.sqrt(Radius_act**2+(Length/2)**2) #cylinder potential collision sphere
             for i_fibre in range(N_act):  
                 flag_validationencours=1
                 iteration=0              
                 while flag_validationencours and iteration<iteration_max :
-                    #POINT : CENTRE BASE DU CYLINDRE
-                    [xa,ya,za]=[random.random(),random.random(),random.random()]  #définition du premier point : centre de la base du cylindre
-                    #VECTEUR : axe de revolution cylindre
+                    [xa,ya,za]=[random.random(),random.random(),random.random()]  
                     [xb,yb,zb]=[random.uniform(-1,2),random.uniform(-1,2),random.uniform(-1,2)]
                     #print('xb,yb,zb='+str([xb,yb,zb]))
-                    n_l2=np.sqrt(xb**2+yb**2+zb**2) #calcul norme du vecteur ALEATOIRE
-                    [xb,yb,zb]=(Length/n_l2)*np.array([xb,yb,zb]) #CORRECTION NORME VECTEUR=Length
+                    n_l2=np.sqrt(xb**2+yb**2+zb**2) 
+                    [xb,yb,zb]=(Length/n_l2)*np.array([xb,yb,zb]) 
                                 
                     flag_colision_act_act=0 ; flag_colision_act_rib=0
                     i=0
                     while i<len(L_xa) and flag_colision_act_act==0:
-                        p1=np.array([xa,ya,za]) #début 1er segment
-                        p2=p1+np.array([xb,yb,zb]) #fin 1er segment (fin de l'axe du cylindre)
-                        p3=np.array([L_xa[i],L_ya[i],L_za[i]]) #début 2ème segment
-                        p4=p3+np.array([L_xb[i],L_yb[i],L_zb[i]])   #fin 2ème segment (fin de l'axe du cylindre)
+                        p1=np.array([xa,ya,za]) 
+                        p2=p1+np.array([xb,yb,zb]) 
+                        p3=np.array([L_xa[i],L_ya[i],L_za[i]]) 
+                        p4=p3+np.array([L_xb[i],L_yb[i],L_zb[i]])   
                         
-                        d=closest_line_seg_line_seg(p1, p2, p3, p4) #calcul distance minimale entre les deux cylindres
+                        d=closest_line_seg_line_seg(p1, p2, p3, p4) #minimal distance between the two cylinders
 
                         if d<2*Radius_impenetrable_act:
                             flag_colision=1
@@ -974,13 +746,13 @@ def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obs
                                 print('echec*1000')
                         i+=1       
                     j=0  
-                    while j<len(L_x) and flag_colision_act_rib==0: #CALCUL COLLISIONS CYLINDRE SPHERE
-                        p1=np.array([xa,ya,za]) #début 1er segment
-                        p2=p1+np.array([xb,yb,zb]) #fin 1er segment (fin de l'axe du cylindre)
-                        p3=np.array([L_x[j]-eps,L_y[j]-eps,L_z[j]-eps]) #début 2ème segment
-                        p4=p3+np.array([L_x[j]+eps,L_y[j]+eps,L_z[j]+eps])   #fin 2ème segment (fin de l'axe du cylindre)
+                    while j<len(L_x) and flag_colision_act_rib==0: #computing collisions between cylinder and spheres
+                        p1=np.array([xa,ya,za]) 
+                        p2=p1+np.array([xb,yb,zb]) 
+                        p3=np.array([L_x[j]-eps,L_y[j]-eps,L_z[j]-eps]) 
+                        p4=p3+np.array([L_x[j]+eps,L_y[j]+eps,L_z[j]+eps])   
                             
-                        d=closest_line_seg_line_seg(p1, p2, p3, p4) #calcul distance minimale entre les deux cylindres
+                        d=closest_line_seg_line_seg(p1, p2, p3, p4) 
 
                         if d<(Radius_impenetrable_act+Radius_impenetrable_rib):
                             flag_colision=1
@@ -995,23 +767,21 @@ def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obs
                         iteration+=1
                         
                     if iteration==iteration_max:
-                        print("ECHEC POSITIONNEMENT OBSTACLE N°")  
+                        print("FAILURE PLACEMENT OBSTACLE N°")  
                         return
                 
-                #AJOUT DE l'obstacle (après validation)
-                [xc,yc,zc]=np.array([xa,ya,za])+np.array([xb,yb,zb])/2#centre du cylindre normé             
-                for d_x in range(-1,2): #selon chaque axe : on ajoute 27 fois l'obstacle
+                #adding the validation obstacle
+                [xc,yc,zc]=np.array([xa,ya,za])+np.array([xb,yb,zb])/2            
+                for d_x in range(-1,2): 
                     for d_y in range(-1,2):
                         for d_z in range(-1,2):     
                             L_cube=1
                             [x_cube,y_cube,z_cube]=[0.5,0.5,0.5]
-                            #si critere cube valide, l'obstacles a de fortes chances de toucher le cube
-                            "mod 2x radius pour générer des trucs qui marchent même avec un rayon plus gros"
                             Radius_eq*=2
                             "==============="
                             Critere_cube=abs(xc+d_x-x_cube)<(L_cube/2+Radius_eq) and abs(yc+d_y-y_cube)<(L_cube/2+Radius_eq) and abs(zc+d_z-z_cube)<(L_cube/2+Radius_eq)
                             if Critere_cube : #la sphère de colision est susceptible d'intersecter le cube unité            
-                                gmsh.model.occ.addCylinder(xa+d_x, ya+d_y, za+d_z, xb, yb, zb, Radius_act, 1000+k) #donc on ajoute l'obstacle
+                                gmsh.model.occ.addCylinder(xa+d_x, ya+d_y, za+d_z, xb, yb, zb, Radius_act, 1000+k) #we add obstacle
                                 L_xa.append(xa+d_x)
                                 L_ya.append(ya+d_y)
                                 L_za.append(za+d_z)
@@ -1023,18 +793,18 @@ def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obs
             MATRICE_OBSTACLES_cylindres[:,:]=np.transpose([L_xa,L_ya,L_za,L_xb,L_yb,L_zb])
             MATRICE_OBSTACLES=(MATRICE_OBSTACLES_spheres,MATRICE_OBSTACLES_cylindres)
                
-        else : #UNE MATRICE OBSTACLE A ETE FOURNIE
+        else : #MATRICE_OBSTACLES provided
             MATRICE_OBSTACLES_spheres,MATRICE_OBSTACLES_cylindres=MATRICE_OBSTACLES
             "Spheres"
             N_obstacles_repetes=MATRICE_OBSTACLES_spheres.shape[0]
             for k_1 in range (N_obstacles_repetes):
                 [x,y,z]=MATRICE_OBSTACLES_spheres[k_1,:]
-                gmsh.model.occ.addSphere(x,y,z, Radius_rib, 1000+k_1)#on ajoute la sphère  
+                gmsh.model.occ.addSphere(x,y,z, Radius_rib, 1000+k_1)#we add the sphere 
             "Cylindres"
             N_obstacles_repetes=MATRICE_OBSTACLES_cylindres.shape[0]
             for k_2 in range (N_obstacles_repetes):
                 [xa,ya,za,xb,yb,zb]=MATRICE_OBSTACLES_cylindres[k_2,:]
-                gmsh.model.occ.addCylinder(xa, ya, za, xb, yb, zb, Radius_act, 2000+k_2) #donc on ajoute l'obstacle                                   
+                gmsh.model.occ.addCylinder(xa, ya, za, xb, yb, zb, Radius_act, 2000+k_2) #we add the cylinder                              
         
         
     gmsh.model.occ.synchronize() #maj geometrie  
@@ -1043,55 +813,27 @@ def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obs
         
         
     if geom in [1,2,3]:
-        #cut des obstacles (dont la majorité devrait couper le cube, mais pas forcément tous)
+        #cutting obstacles 
         All_volumes=gmsh.model.getEntitiesInBoundingBox(-2-eps,-2-eps,-2-eps,3+eps,3+eps,3+eps,3)
-        Main_volume=[(3,10)] #volume du cube unité 
+        Main_volume=[(3,10)] #fluid volume
 
-        Cut_volumes=list(set(All_volumes)-set(Main_volume)) #liste des obstacles à retirer
-        gmsh.model.occ.cut(Main_volume,Cut_volumes) #beaucoup plus efficace de retirer toute la liste d'un coup
+        Cut_volumes=list(set(All_volumes)-set(Main_volume)) #obstacles to remove
+        gmsh.model.occ.cut(Main_volume,Cut_volumes) 
         print('cut done')
-        gmsh.model.occ.synchronize() #maj geometrie  
+        gmsh.model.occ.synchronize() #update
 
-        #suppression des volumes interieurs isolés
-        Internal_volumes=gmsh.model.getEntitiesInBoundingBox(+eps,+eps,+eps,1-eps,1-eps,1-eps,3) #morceaux intérieurs au cube unité   
-        gmsh.model.occ.remove(Internal_volumes) #suppression des volumes intérieurs du cube
-        gmsh.model.occ.synchronize() #maj geometrie  
+        #suppressing internal isolated fluid volumes
+        Internal_volumes=gmsh.model.getEntitiesInBoundingBox(+eps,+eps,+eps,1-eps,1-eps,1-eps,3) 
+        gmsh.model.occ.remove(Internal_volumes) 
+        gmsh.model.occ.synchronize() #update
         
         print('nombre de volumes'+str(gmsh.model.getEntities(3)))
-        
-        
-        # #suppression des culs de sacs
-        # Border_volumes=[]
-        # Border_volumes+=gmsh.model.getEntitiesInBoundingBox(-eps,-eps,-eps,1+eps,1+eps,1-eps,3)
-        # Border_volumes+=gmsh.model.getEntitiesInBoundingBox(-eps,-eps,-eps,1+eps,1-eps,1+eps,3)
-        # Border_volumes+=gmsh.model.getEntitiesInBoundingBox(-eps,-eps,-eps,1-eps,1+eps,1+eps,3)
-        
-        # Border_volumes+=gmsh.model.getEntitiesInBoundingBox(+eps,-eps,-eps,1+eps,1+eps,1+eps,3)
-        # Border_volumes+=gmsh.model.getEntitiesInBoundingBox(-eps,+eps,-eps,1+eps,1+eps,1+eps,3)
-        # Border_volumes+=gmsh.model.getEntitiesInBoundingBox(-eps,-eps,+eps,1+eps,1+eps,1+eps,3)
-        
-        # gmsh.model.occ.remove(Border_volumes) #suppression des volumes intérieurs du cube
-        # gmsh.model.occ.synchronize() #maj geometrie  
-        
-        # print('nombre de volumes'+str(gmsh.model.getEntities(3)))
         
         
         L_volume=gmsh.model.getEntities(3)#gmsh.model.getEntitiesInBoundingBox( - eps, -eps, -eps,  1+ eps, 1 + eps, 1 + eps, 3)
         L_volume=[x[1] for x in L_volume]
         print (L_volume)
-        
-        
-        # if len(gmsh.model.getEntities(3))>1:
-        #     L_volume=[]
-        #     for i in range (len(gmsh.model.getEntities(3))):
-        #         L_volume.append(gmsh.model.getEntities(3)[i][1])
-        #     print('erreur trop de volumes')
 
-            #eturn 'aaa'
-            
-        # else : 
-        #     L_volume=[gmsh.model.getEntities(3)[0][1]]
-        
         
         L_allsurfaces=gmsh.model.getEntitiesInBoundingBox( - eps, -eps, -eps,  1+ eps, 1 + eps, 1 + eps, 2)
         L_allsurfaces=[x[1] for x in L_allsurfaces]
@@ -1119,17 +861,17 @@ def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obs
     #     gmsh.fltk.run()
     
     "========================================================"
-    "GROUPES PHYSIQUES"
+    "PHYSICAL GROUPS DEFINIITON"
     gmsh.model.addPhysicalGroup(2, L_bordcarre,2)
     gmsh.model.addPhysicalGroup(2, L_obstacle,3)
     gmsh.model.addPhysicalGroup(3, L_volume,1)
     
     "========================================================"
-    "BORDS PERIODIQUES"
+    "PERIODIC BOUNDARIES"
     Set_periodic_boundaries(eps)
 
     "========================================================"
-    "MAILLAGE"
+    "MESHING"
     gmsh.model.mesh.setSize(gmsh.model.getEntities(0), Mesh_size)
     if refine_obstacle:
         gmsh.model.mesh.field.add("Distance", 1)
@@ -1157,50 +899,49 @@ def P20_3D_gmsh_generator(Radius,Radius_impenetrable,Length,Mesh_size,geom,N_obs
             gmsh.fltk.run()
     
     "========================================================"
-    "EXPORTATION"   
+    "EXPORTING"   
     #gmsh.write(file_name+".brep") #
     gmsh.write(file_name+".msh")
     L_t.append(time.time())
-    print('Temps Gmsh total : '+str(L_t[-1]-L_t[0])+'s')
+    print('Total GMsh time: '+str(L_t[-1]-L_t[0])+'s')
     gmsh.finalize()
     return MATRICE_OBSTACLES
     
     
-#def OLI18_sMAJenCOURS_olver_perm_3D:   
 def closest_line_seg_line_seg(p1, p2, p3, p4):
-    "distance deux segments 3D : https://math.stackexchange.com/questions/846054/closest-points-on-two-line-segments" 
+    "distance between two 3D segments : https://math.stackexchange.com/questions/846054/closest-points-on-two-line-segments" 
 
-    P1 = p1 #1er pt du 1er segment
-    P2 = p3 #1er pt du 2eme segment
-    V1 = p2 - p1 #vecteur 1er segment 
-    V2 = p4 - p3 #vecteur 2ème segment
-    V21 = P2 - P1 #vecteur_diff : 1er_pt_2eme segment-1er_pt_1er segment
+    P1 = p1 
+    P2 = p3 #
+    V1 = p2 - p1 
+    V2 = p4 - p3 
+    V21 = P2 - P1 
 
-    v22 = np.dot(V2, V2) #norme² 2eme vecteur
-    v11 = np.dot(V1, V1) #norme² 1er vecteur
-    v21 = np.dot(V2, V1) #PS des deux vecteurs
-    v21_1 = np.dot(V21, V1) #PS vecteur_diff et 1er vecteur
-    v21_2 = np.dot(V21, V2)#PS vecteur_diff et 2ème vecteur
-    denom = v21 * v21 - v22 * v11 #=0 ssi vecteurs colinéaires (ou nul)
+    v22 = np.dot(V2, V2) 
+    v11 = np.dot(V1, V1) 
+    v21 = np.dot(V2, V1) 
+    v21_1 = np.dot(V21, V1) 
+    v21_2 = np.dot(V21, V2)
+    denom = v21 * v21 - v22 * v11 
 
-    if np.isclose(denom, 0.): #cas ou les vecteurs sont parallèles
+    if np.isclose(denom, 0.): #if vectors are colinear
         s = 0.
         t = (v11 * s - v21_1) / v21
-    else: #les vecteurs ne sont pas parallèles : calcul des deux pts qui tq le vecteur qui les relie est ortho aux deux vecteurs
+    else: #if vectors are not colinear
         s = (v21_2 * v21 - v22 * v21_1) / denom
         t = (-v21_1 * v21 + v11 * v21_2) / denom
 
-    s = max(min(s, 1.), 0.) #si jamais les pts sont hors du segment, alors le meilleur pt sur le segment est sa borne
+    s = max(min(s, 1.), 0.) 
     t = max(min(t, 1.), 0.)
 
-    p_a = P1 + s * V1 #point absolu
+    p_a = P1 + s * V1 
     p_b = P2 + t * V2
     
-    d=np.sqrt(np.dot(p_b-p_a,p_b-p_a)) #distance minimale entre les segments
+    d=np.sqrt(np.dot(p_b-p_a,p_b-p_a)) #minimal distance between segments
     return d 
     
 
-class OLI16_PeriodicBC3(SubDomain): #Fonction interne FEniCS d'appairage des bords périodiques
+class OLI16_PeriodicBC3(SubDomain): #FEniCS function for matching of periodic boundaries
     def inside(self, x, on_boundary):
         # return True if on left or bottom boundary AND NOT on one of the two slave edges
         return bool((near(x[0], 0) or near(x[1],0)  or near(x[2], 0)) and 
@@ -1250,8 +991,8 @@ class OLI16_PeriodicBC3(SubDomain): #Fonction interne FEniCS d'appairage des bor
             
             
 def Set_periodic_boundaries(eps):
-    #Avec Gmsh on peut forcer le maillage à être périodique (cad les éléments se correspondent 1 à 1 sur les bords)  
-    #matrice des transformations affines pour lier les bords périodiques entre eux
+    #gmsh function to force periodic meshing of boundaries 
+    #affine transformations matrices
     #selon x
     translation =[1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]   
     #selon y    
@@ -1277,10 +1018,9 @@ def Set_periodic_boundaries(eps):
             if (abs(xmin2 - xmin) < eps and abs(xmax2 - xmax) < eps
                     and abs(ymin2 - ymin) < eps and abs(ymax2 - ymax) < eps
                     and abs(zmin2 - zmin) < eps and abs(zmax2 - zmax) < eps):
-                #print('Correspondance x trouvée')
+                #print('x match found')
                 gmsh.model.mesh.setPeriodic(2, [j[1]], [i[1]], translation)
-    #"LES BLOCS D'APPAIRAGE PERIODIQUE SELON LES DIRECTION Y ET Z FONCTIONNENT
-    #Fonction d'appairage des bords périodiques (selon y)
+    #on y axis
     symin = gmsh.model.getEntitiesInBoundingBox( - eps, -eps, -eps, 1 + eps,  eps, 1 + eps, 2)
     for i in symin:
         # Then we get the bounding box of each left surface
@@ -1300,9 +1040,9 @@ def Set_periodic_boundaries(eps):
             if (abs(xmin2 - xmin) < eps and abs(xmax2 - xmax) < eps
                     and abs(ymin2 - ymin) < eps and abs(ymax2 - ymax) < eps
                     and abs(zmin2 - zmin) < eps and abs(zmax2 - zmax) < eps):
-                #print('Correspondance y trouvée')
+                #print('y match found')
                 gmsh.model.mesh.setPeriodic(2, [j[1]], [i[1]], translation2)             
-    #Fonction d'appairage des bords périodiques (selon z)
+    #on z axis
     szmin = gmsh.model.getEntitiesInBoundingBox( - eps, -eps, -eps, 1 + eps, 1+ eps, eps, 2)
     for i in szmin:
         # Then we get the bounding box of each left surface
@@ -1322,53 +1062,53 @@ def Set_periodic_boundaries(eps):
             if (abs(xmin2 - xmin) < eps and abs(xmax2 - xmax) < eps
                     and abs(ymin2 - ymin) < eps and abs(ymax2 - ymax) < eps
                     and abs(zmin2 - zmin) < eps and abs(zmax2 - zmax) < eps):
-                #print('Correspondance z trouvée')
+                #print('z match found')
                 gmsh.model.mesh.setPeriodic(2, [j[1]], [i[1]], translation3)
-    gmsh.model.occ.synchronize() #maj geometrie
+    gmsh.model.occ.synchronize() #update
 
 
 
 
 
 "========================================================"
-"FONCTIONS PRINCIPALES (A MODIFIER SELON CONFIGURATION)"
+"FUNCTIONS"
 "========================================================"
 
 def OLI16_solver_volume_3D(file_name):
     L_t=[time.time()]
     mesh,ds,dx, boundaries, subdomains=OLI16_importation_mesh_3D(file_name)
-    pbc = OLI16_PeriodicBC3()   #fonction d'appairage des bords périodiques sur FEniCS
+    pbc = OLI16_PeriodicBC3()   #periodic boundaries matching on FEniCS
     P1,R,V,n,V_alpha,e_vectors,u_tuple=OLI16_init_diff_fenics_3D(mesh,dx,pbc)
-    Resultat=V_alpha #porosité, puis autres résultats      
+    Resultat=V_alpha #porosity then other results    
     L_t.append(time.time())
     #print('Temps FEniCS total : '+str(L_t[-1]-L_t[0])+'s')
     return Resultat
     
-def OLI16_solver_diff_3D(file_name): #routine d'appel à FEniCS pour résolution du problème FEM
+def OLI16_solver_diff_3D(file_name): #finite elemnts resolution for diffusion
     L_t=[time.time()]
     mesh,ds,dx, boundaries, subdomains=OLI16_importation_mesh_3D(file_name)
-    pbc = OLI16_PeriodicBC3()   #fonction d'appairage des bords périodiques sur FEniCS
+    pbc = OLI16_PeriodicBC3()   #periodic boundaries matching on FEniCS
     P1,R,V,n,V_alpha,e_vectors,u_tuple=OLI16_init_diff_fenics_3D(mesh,dx,pbc)
-    Resultat=[V_alpha] #porosité, puis autres résultats
+    Resultat=[V_alpha] #porosity
 
 
 
     "========================================================"
-    "ELEMENTS FINIS"
+    "FINITE ELEMENTS"
     
-    for i_dir in range(3): #calcul selon les 3 directions pour avoir Dxx Dyy et Dzz   
+    for i_dir in range(3): #computations on the 3 directions to get Dxx Dyy et Dzz   
         e_x=e_vectors[i_dir]
  
         # Define variational problem
-        (u, c) = TrialFunction(V) #solution cherchées : u est la sol, c la constante
+        (u, c) = TrialFunction(V) #u is the solution searched, c is constant
         (v, d) = TestFunction(V) #fonctions test
-        a = (dot(grad(u), grad(v))+ c*v + u*d)*dx #forme bilinéaire
-        L = -dot(e_x,n)*v*ds(3)  #f*v*dx-g*dot(e_x,n)*v*ds #forme linéaire. Contient la condition de neumann aux abords des obstacles
+        a = (dot(grad(u), grad(v))+ c*v + u*d)*dx #bilinear form
+        L = -dot(e_x,n)*v*ds(3)  #f*v*dx-g*dot(e_x,n)*v*ds #linear form containing the neumann boundary condition on surface of obstacles 
     
         "========================================================"
         "SOLVER"
     
-        w = Function(V) #on définit une nouvelle fonction qui sera la solution
+        w = Function(V) #solution definition 
         
         # prm = parameters.krylov_solver  # short form
         # prm.absolute_tolerance = 1E-10
@@ -1376,19 +1116,19 @@ def OLI16_solver_diff_3D(file_name): #routine d'appel à FEniCS pour résolution
         # prm.maximum_iterations = 
         
         
-        solve(a == L, w,solver_parameters={'linear_solver': 'gmres'}) #UTILISATION GMRES OPTIMALE, precondtionner non réglé
+        solve(a == L, w,solver_parameters={'linear_solver': 'gmres'}) # GMRES used
 
         
-        (u, c) = w.split() #séparation u et constante c
+        (u, c) = w.split() #separating u and c
     
         "========================================================"
-        "CALCUL VARIABLES GLOBALES"
+        "COMPUTING GLOBAL VARIABLES"
 
-        dxx = assemble(dot(e_x, n)*u*ds(3)) #on intègre bx sur cette surface
-        Dxx_ad=1+(1/V_alpha)*dxx #on obtient la compo Dxx du tenseur
-        epsi_Dad=V_alpha*Dxx_ad #on obtient la grandeur qu'on plot habituellement        
-        Resultat.append(epsi_Dad) #ajout du résultat 
-        u_tuple=u_tuple+(u,) #sauvegarde du champ solution
+        dxx = assemble(dot(e_x, n)*u*ds(3)) 
+        Dxx_ad=1+(1/V_alpha)*dxx 
+        epsi_Dad=V_alpha*Dxx_ad       
+        Resultat.append(epsi_Dad) 
+        u_tuple=u_tuple+(u,) 
         
     L_t.append(time.time())
     print('Temps FEniCS_diff total : '+str(L_t[-1]-L_t[0])+'s')
@@ -1397,21 +1137,21 @@ def OLI16_solver_diff_3D(file_name): #routine d'appel à FEniCS pour résolution
 def OLI18_solver_perm_3D(file_name):   
     L_t=[time.time()]
     mesh,ds,dx, boundaries, subdomains=OLI16_importation_mesh_3D(file_name)
-    pbc = OLI16_PeriodicBC3()   #fonction d'appairage des bords périodiques sur FEniCS
+    pbc = OLI16_PeriodicBC3()   #periodic boundaries matching on FEniCS
     P1,P2,V,n,V_alpha,e_vectors,u_tuple=OLI16_init_perm_fenics_3D(mesh,dx,pbc)
-    noslip = Constant((0.0, 0.0,0.0)) #vitesse nulle aux parois
-    bc_obstacle=DirichletBC(V.sub(0), noslip, boundaries,3) #"""BOUNDARY NUMBER SELON GEOMETRIE"""" #W.sub(0) c'est le vecteur vitesse 
-    bcs = [bc_obstacle] #ligne utilise s'il y'a plusieurs conditions de Dirichlet à implémenter (ici non)   
+    noslip = Constant((0.0, 0.0,0.0)) #null speed vector on obstacle surfaces 
+    bc_obstacle=DirichletBC(V.sub(0), noslip, boundaries,3) 
+    bcs = [bc_obstacle] #if several dirichlet boundaries conditions to be applied  
     
     "========================================================"
-    "ELEMENTS FINIS"
+    "FINITE ELEMENTS "
     
-    (u, p) = TrialFunctions(V) #"""ATTENTION FEniCS utilise p_prog=-p_reelle""" # Define variational problem
+    (u, p) = TrialFunctions(V) #"""WARNING FEniCS uses p_numerical=-p_real""" # Define variational problem
     (v, q) = TestFunctions(V)
-    f = Constant((1, 0.0,0.0)) #terme source pour le probleme colonne _x (pour _y ou _z il faut changer la composante non nulle)
+    f = Constant((1, 0.0,0.0)) #source term
     a = inner(grad(u), grad(v))*dx + div(v)*p*dx + q*div(u)*dx
     L = inner(f, v)*dx
-    # PRECONDITIONNEMENT (pour améliorer conditionnement)
+    # PRECONDITIONNING
     b = inner(grad(u), grad(v))*dx + p*q*dx    # Form for use in constructing preconditioner matrix
     A, bb = assemble_system(a, L, bcs) # Assemble system
     P, btmp = assemble_system(b, L, bcs) # Assemble preconditioner system
@@ -1427,45 +1167,40 @@ def OLI18_solver_perm_3D(file_name):
     solver.parameters["maximum_iterations"] = 1000
     # Associate operator (A) and preconditioner matrix (P)
     solver.set_operators(A, P)
-    # L_t.append(time.time())
-    # print('Temps FEniCS prepa : '+str(L_t[-1]-L_t[-2])+'s')
+
     
     "========================================================"
     "SOLVER"
     
     solver.solve(U.vector(), bb)    
-    # L_t.append(time.time())
-    # print('Temps FEniCS solve : '+str(L_t[-1]-L_t[-2])+'s')
+
     
     "========================================================"
-    "CALCUL VARIABLES GLOBALES"
+    "GLOBAL VARIABLES COMPUTATION"
     
     # Get sub-functions
-    u, p = U.split() #séparation vecteur vitesse et pression NEGATIVE      #p=-p 
-    #Je calcule toute la première colonne du tenseur de perméabilité
-    #meme si je ne me sers que du coef kxx car 
-    #le problème de stokes résolu permet d'avoir aussi kyx et kzx gratos
+    u, p = U.split() #séparating speed vector and numerical pressure      #p=-p 
+    #computation of the first column of the permeability tensor
     V_tot=1
-    #Epsi=V_alpha/V_tot #porosité    
+    #Epsi=V_alpha/V_tot #porosity
     kperm_px=[(1/V_tot)*assemble(dot(u,e_vectors[0])*dx(mesh)),(1/V_tot)*assemble(dot(u,e_vectors[1])*dx(mesh)),(1/V_tot)*assemble(dot(u,e_vectors[2])*dx(mesh))] 
-    Kx=kperm_px[0] #jon considère seulement kxx car kyx et kzx sont à priori très petits
+    Kx=kperm_px[0] #we only consider kxx as kyx and kzx are expected to be very small
     #B_px=u*(Epsi/Kx)-e_vectors[0]
     #v_moy_x=1
     #v_moyint=[v_moy_x,0,0]
     #v_tilde=B_px*v_moy_x
     #v_tot=v_tilde+Constant((v_moyint[0],v_moyint[1],v_moyint[2]))     
-    #C_drag=(2*Radius**2)/(9*(1-Epsi))*(1/Kx) #coefficient de trainée utilisé par Morgan pour cas test
-    #abscisse_SU=((1-Epsi)**(1/3))/Epsi #abscisse utilisée par Morgan pour cas test  
-    # L_t.append(time.time())
-    # print('Temps FEniCS varglob : '+str(L_t[-1]-L_t[-2])+'s')
+    #C_drag=(2*Radius**2)/(9*(1-Epsi))*(1/Kx) #variables used by Morgan Chabanon & al for validation
+    #abscisse_SU=((1-Epsi)**(1/3))/Epsi  
+
     L_t.append(time.time())
-    print('Temps FEniCS_perm total : '+str(L_t[-1]-L_t[0])+'s')  
+    print('Time FEniCS_perm total : '+str(L_t[-1]-L_t[0])+'s')  
     return (V_alpha, Kx)#,abscisse_SU,C_drag)#(abscisse_SU,C_drag,B_px,Kx,v_tot,v_tilde,v_moy_x) #Epsi,int_vtot_surf
 
 
 
 "========================================================"
-"FONCTIONS SECONDAIRES (NE PAS MODIFIER EN PRINCIPE)"
+"SECONDARY FUNCTIONS"
 "========================================================"
 
 def OLI16_conversion_maillage_3D(file_name):
@@ -1492,19 +1227,19 @@ def OLI16_conversion_maillage_3D(file_name):
 def OLI16_importation_mesh_3D(file_name):
     mesh=Mesh() #définition du mesh
     
-    mvc = MeshValueCollection("size_t", mesh, mesh.topology().dim()) #récupération éléments triangles (surfaces)
+    mvc = MeshValueCollection("size_t", mesh, mesh.topology().dim()) #recovery of triangle elements (surfaces)
     with XDMFFile(file_name+"_mesh.xdmf") as infile:
        infile.read(mesh)
        infile.read(mvc, "name_to_read")
     cf = cpp.mesh.MeshFunctionSizet(mesh, mvc)
 
-    mvc = MeshValueCollection("size_t", mesh, mesh.topology().dim()-1) #récupération éléments segments (bordures)
+    mvc = MeshValueCollection("size_t", mesh, mesh.topology().dim()-1) #recovery of line elements
     with XDMFFile(file_name+"_mf.xdmf") as infile:
         infile.read(mvc, "name_to_read")   
     mf = cpp.mesh.MeshFunctionSizet(mesh, mvc) 
     
-    ds = Measure("ds", domain=mesh, subdomain_data=mf) #définition intégrande bordure
-    dx = Measure("dx", domain=mesh, subdomain_data=cf) #définition intégrande surface   
+    ds = Measure("ds", domain=mesh, subdomain_data=mf) #integration on lines
+    dx = Measure("dx", domain=mesh, subdomain_data=cf) #integration on surfaces  
     
     #mesh = Mesh("yourmeshfile.xml")
     # subdomains = MeshFunction("size_t", mesh, cf)
@@ -1521,28 +1256,27 @@ def OLI16_importation_mesh_3D(file_name):
 
 
 def OLI16_init_diff_fenics_3D(mesh,dx,pbc):
-    set_log_level(40) #FENICS N'affiche que les erreurs en principe, en pratique il affiche trop    
-    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1) #("Lagrange", mesh.ufl_cell(), 1) #utilisation d'éléments mixtes car résolution avec conditions de Neumann pures
-    #(la solution est donc défninie à une constante près)
+    set_log_level(40)    
+    P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1) #("Lagrange", mesh.ufl_cell(), 1) #use of mixed elements for resolution with pure Neumann boundary condition
     R = FiniteElement("Real", mesh.ufl_cell(), 0)
     V = FunctionSpace(mesh, P1 * R,constrained_domain=pbc)
-    n=FacetNormal(mesh) #structure un peu bizzare qui contient la normale ext aux parois du domaine
-    V_alpha=assemble(Constant(1.0)*dx) #on intègre l'espace pour obtenir la porosité                
+    n=FacetNormal(mesh) 
+    V_alpha=assemble(Constant(1.0)*dx) #porosity              
     e_vectors=(Constant((1,0,0)),Constant((0,1,0)),Constant((0,0,1))) 
     u_tuple=()
     
     return P1,R,V,n,V_alpha,e_vectors,u_tuple
 
 def OLI16_init_perm_fenics_3D(mesh,dx,pbc):
-    set_log_level(40) #FENICS N'affiche que les erreurs en principe, en pratique il affiche trop    
-    # Define function spaces : on utilise des éléments mixtes pour la résolution directe du problème
-    P2 = VectorElement("CG", mesh.ufl_cell(), 2) #ordre 2 nécessaire pour résolution Stokes sinon instable 
-    P1 = FiniteElement("CG", mesh.ufl_cell(), 1) #élément pour la pression
-    TH = MixedElement([P2, P1]) #élément mixte de Taylor Hood
-    V = FunctionSpace(mesh, TH,constrained_domain=pbc) #condition périodique implémentée ici    
+    set_log_level(40)   
+    # Define function spaces : use of mixed elements for direct resolution of the problem
+    P2 = VectorElement("CG", mesh.ufl_cell(), 2) #order 2 elements required for Stokes resolution 
+    P1 = FiniteElement("CG", mesh.ufl_cell(), 1) #order 1 element for pressure
+    TH = MixedElement([P2, P1]) #Taylor Hood mixed element
+    V = FunctionSpace(mesh, TH,constrained_domain=pbc) #periodic boundary condition   
 
-    n=FacetNormal(mesh) #structure un peu bizzare qui contient la normale ext aux parois du domaine
-    V_alpha=assemble(Constant(1.0)*dx) #on intègre l'espace pour obtenir la porosité                
+    n=FacetNormal(mesh) 
+    V_alpha=assemble(Constant(1.0)*dx)              
     e_vectors=(Constant((1,0,0)),Constant((0,1,0)),Constant((0,0,1))) 
     u_tuple=()
     
